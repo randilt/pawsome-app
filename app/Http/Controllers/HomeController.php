@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class HomeController extends Controller
 {
@@ -14,7 +14,8 @@ class HomeController extends Controller
     public function index()
     {
         // Get featured products for the home page
-        $featuredProducts = Product::active()
+        $featuredProducts = Product::where('is_featured', true)
+            ->where('is_active', true)
             ->orderBy('created_at', 'desc')
             ->take(8)
             ->get();
@@ -51,6 +52,8 @@ class HomeController extends Controller
         ]);
         
         // In a real application, you would send an email or store the contact message
+        // For example:
+        // Mail::to('info@pawsome.com')->send(new \App\Mail\ContactFormSubmission($validated));
         
         return back()->with('success', 'Your message has been sent successfully!');
     }

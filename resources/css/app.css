@@ -5,3 +5,7 @@
 [x-cloak] {
     display: none;
 }
+
+.text-black {
+    color: #000 !important;
+}

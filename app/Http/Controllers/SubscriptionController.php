@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CustomerSubscription;
 use App\Models\SubscriptionPlan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SubscriptionController extends Controller
@@ -14,13 +15,16 @@ class SubscriptionController extends Controller
      */
     public function index()
     {
-        $plans = SubscriptionPlan::orderBy('price')->get();
+        $plans = SubscriptionPlan::where('is_active', true)
+            ->orderBy('price')
+            ->get();
         
         // Check if user has active subscription
         $activeSubscription = null;
-        if (auth()->check()) {
-            $activeSubscription = CustomerSubscription::where('user_id', auth()->id())
-                ->active()
+        if (Auth::check()) {
+            $activeSubscription = CustomerSubscription::where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->where('end_date', '>', now())
                 ->first();
         }
         
@@ -43,8 +47,9 @@ class SubscriptionController extends Controller
             $plan = SubscriptionPlan::findOrFail($validated['plan_id']);
             
             // Check if user has active subscription
-            $activeSubscription = CustomerSubscription::where('user_id', auth()->id())
-                ->active()
+            $activeSubscription = CustomerSubscription::where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->where('end_date', '>', now())
                 ->first();
                 
             if ($activeSubscription) {
@@ -53,15 +58,17 @@ class SubscriptionController extends Controller
             
             // Calculate dates
             $startDate = now();
-            $endDate = now()->addMonths($plan->duration_months);
+            $endDate = now()->addDays($plan->duration_in_days);
             
             // Create subscription
             $subscription = CustomerSubscription::create([
-                'user_id' => auth()->id(),
-                'plan_id' => $plan->id,
+                'user_id' => Auth::id(),
+                'subscription_plan_id' => $plan->id,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'status' => 'active',
+                'payment_method' => 'credit_card', // Default payment method
+                'payment_status' => 'completed', // Default payment status
             ]);
             
             DB::commit();
@@ -82,7 +89,8 @@ class SubscriptionController extends Controller
     public function cancel($id)
     {
         $subscription = CustomerSubscription::where('id', $id)
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
+            ->where('status', 'active')
             ->where('status', 'active')
             ->firstOrFail();
             
@@ -100,105 +108,12 @@ class SubscriptionController extends Controller
      */
     public function userSubscriptions()
     {
-        $subscriptions = CustomerSubscription::with('plan')
-            ->where('user_id', auth()->id())
+        $subscriptions = CustomerSubscription::with('subscriptionPlan')
+            ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
             
         return view('profile.subscriptions', compact('subscriptions'));
-    }
-
-    /**
-     * Display a listing of all subscription plans (admin).
-     */
-    public function adminIndex()
-    {
-        $plans = SubscriptionPlan::orderBy('price')->get();
-        
-        return view('admin.subscriptions.plans', compact('plans'));
-    }
-
-    /**
-     * Store a newly created subscription plan in storage (admin).
-     */
-    public function storePlan(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'duration_months' => 'required|integer|min:1',
-        ]);
-        
-        SubscriptionPlan::create($validated);
-        
-        return redirect()->route('admin.subscriptions.plans')
-            ->with('success', 'Subscription plan created successfully.');
-    }
-
-    /**
-     * Update the specified subscription plan in storage (admin).
-     */
-    public function updatePlan(Request $request, $id)
-    {
-        $plan = SubscriptionPlan::findOrFail($id);
-        
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'duration_months' => 'required|integer|min:1',
-        ]);
-        
-        // Check if plan has active subscriptions
-        $activeSubscriptions = CustomerSubscription::where('plan_id', $id)
-            ->active()
-            ->count();
-            
-        if ($activeSubscriptions > 0) {
-            return redirect()->route('admin.subscriptions.plans')
-                ->with('error', 'Cannot modify plan with active subscriptions.');
-        }
-        
-        $plan->update($validated);
-        
-        return redirect()->route('admin.subscriptions.plans')
-            ->with('success', 'Subscription plan updated successfully.');
-    }
-
-    /**
-     * Remove the specified subscription plan from storage (admin).
-     */
-    public function destroyPlan($id)
-    {
-        $plan = SubscriptionPlan::findOrFail($id);
-        
-        // Check if plan has active subscriptions
-        $activeSubscriptions = CustomerSubscription::where('plan_id', $id)
-            ->active()
-            ->count();
-            
-        if ($activeSubscriptions > 0) {
-            return redirect()->route('admin.subscriptions.plans')
-                ->with('error', 'Cannot delete plan with active subscriptions.');
-        }
-        
-        $plan->delete();
-        
-        return redirect()->route('admin.subscriptions.plans')
-            ->with('success', 'Subscription plan deleted successfully.');
-    }
-
-    /**
-     * Display a listing of all active subscriptions (admin).
-     */
-    public function adminSubscriptions()
-    {
-        $subscriptions = CustomerSubscription::with(['user', 'plan'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-            
-        return view('admin.subscriptions.index', compact('subscriptions'));
     }
 }
 

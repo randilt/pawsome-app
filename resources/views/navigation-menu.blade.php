@@ -6,7 +6,8 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('home') }}">
-                        <x-application-mark class="block h-9 w-auto" />
+                        <span class="text-lg font-bold text-gray-800">Pawsome</span>
+                        <!-- <x-application-mark class="block h-9 w-auto" /> -->
                     </a>
                 </div>
 
@@ -18,6 +19,7 @@
                     <x-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.index')">
                         {{ __('Products') }}
                     </x-nav-link>
+         
                 </div>
             </div>
 
