@@ -33,7 +33,7 @@ Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.a
 Route::post('/cart/update/{item}', [CartController::class, 'update'])->name('cart.update');
 Route::post('/cart/remove/{item}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.process');
+Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.process-checkout');
 
 // Subscription routes
 Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscriptions.index');
@@ -55,9 +55,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     
     // Order routes
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-    
+        
     // Subscription management
     Route::post('/subscriptions', [SubscriptionController::class, 'subscribe'])->name('subscriptions.subscribe');
     Route::get('/profile/subscriptions', [SubscriptionController::class, 'userSubscriptions'])->name('profile.subscriptions');

@@ -42,139 +42,219 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Add product to cart
 function addToCart(productId, quantity) {
-    fetch(`/cart/add/${productId}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": document
-                .querySelector('meta[name="csrf-token"]')
-                .getAttribute("content"),
-        },
-        body: JSON.stringify({ quantity: quantity }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                updateCartCount();
-                showNotification("Product added to cart!", "success");
-            } else {
+    // First, try to use localStorage for client-side cart
+    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
+
+    // Find product details from the page or fetch from API
+    let productName, productPrice, productImage;
+
+    // If we're on the product page, get details from the page
+    if (document.querySelector("h1")) {
+        productName = document.querySelector("h1").textContent.trim();
+        productPrice =
+            document
+                .querySelector(".text-primary.font-bold")
+                ?.textContent.trim()
+                .replace("LKR ", "")
+                .replace(",", "") || "0";
+        productImage =
+            document.getElementById("main-image")?.getAttribute("src") || "";
+        const productDescription =
+            document.querySelector(".text-gray-600")?.textContent.trim() || "";
+
+        // Create product object
+        const product = {
+            id: productId,
+            name: productName,
+            price: Number.parseFloat(productPrice),
+            imageUrl: productImage,
+            description: productDescription,
+            quantity: Number.parseInt(quantity),
+        };
+
+        // Check if product already exists in cart
+        const existingProductIndex = cart.findIndex(
+            (item) => item.id === productId
+        );
+
+        if (existingProductIndex !== -1) {
+            // Update quantity if product already exists
+            cart[existingProductIndex].quantity += Number.parseInt(quantity);
+        } else {
+            // Add new product to cart
+            cart.push(product);
+        }
+
+        // Save updated cart to localStorage
+        localStorage.setItem("userCart", JSON.stringify(cart));
+
+        // Update cart count
+        updateCartCount();
+
+        // Show notification
+        showNotification("Product added to cart!", "success");
+    } else {
+        // If not on product page, fetch product details from server
+        fetch(`/api/products/${productId}`, {
+            headers: {
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    const product = {
+                        id: productId,
+                        name: data.data.name,
+                        price: Number.parseFloat(data.data.price),
+                        imageUrl: data.data.image_url || "/placeholder.svg",
+                        description: data.data.description,
+                        quantity: Number.parseInt(quantity),
+                    };
+
+                    // Check if product already exists in cart
+                    const existingProductIndex = cart.findIndex(
+                        (item) => item.id === productId
+                    );
+
+                    if (existingProductIndex !== -1) {
+                        // Update quantity if product already exists
+                        cart[existingProductIndex].quantity +=
+                            Number.parseInt(quantity);
+                    } else {
+                        // Add new product to cart
+                        cart.push(product);
+                    }
+
+                    // Save updated cart to localStorage
+                    localStorage.setItem("userCart", JSON.stringify(cart));
+
+                    // Update cart count
+                    updateCartCount();
+
+                    // Show notification
+                    showNotification("Product added to cart!", "success");
+                } else {
+                    showNotification(
+                        data.message || "Failed to add product to cart.",
+                        "error"
+                    );
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
                 showNotification(
-                    data.message || "Failed to add product to cart.",
+                    "An error occurred. Please try again.",
                     "error"
                 );
-            }
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            showNotification("An error occurred. Please try again.", "error");
-        });
+            });
+    }
 }
 
 // Update cart item quantity
 function updateCartItem(itemId, quantity) {
-    fetch(`/cart/update/${itemId}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": document
-                .querySelector('meta[name="csrf-token"]')
-                .getAttribute("content"),
-        },
-        body: JSON.stringify({ quantity: quantity }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                // Update subtotal and total
-                document.getElementById(
-                    `item-subtotal-${itemId}`
-                ).textContent = `LKR ${data.subtotal}`;
-                document.getElementById(
-                    "cart-total"
-                ).textContent = `LKR ${data.total}`;
+    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
 
-                showNotification("Cart updated!", "success");
-            } else {
-                showNotification(
-                    data.message || "Failed to update cart.",
-                    "error"
-                );
-            }
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            showNotification("An error occurred. Please try again.", "error");
-        });
+    // Find the item in the cart
+    const itemIndex = cart.findIndex((item) => item.id === itemId);
+
+    if (itemIndex === -1) {
+        showNotification("Item not found in cart.", "error");
+        return;
+    }
+
+    // Update quantity
+    cart[itemIndex].quantity = Number.parseInt(quantity);
+
+    // Remove item if quantity is 0 or less
+    if (cart[itemIndex].quantity <= 0) {
+        return removeCartItem(itemId);
+    }
+
+    // Save updated cart
+    localStorage.setItem("userCart", JSON.stringify(cart));
+
+    // Update UI
+    if (document.getElementById(`item-subtotal-${itemId}`)) {
+        const subtotal = cart[itemIndex].price * cart[itemIndex].quantity;
+        document.getElementById(
+            `item-subtotal-${itemId}`
+        ).textContent = `LKR ${subtotal.toFixed(2)}`;
+
+        // Update total
+        const total = cart.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+        );
+        document.getElementById(
+            "cart-total"
+        ).textContent = `LKR ${total.toFixed(2)}`;
+    }
+
+    // Update cart count
+    updateCartCount();
+
+    showNotification("Cart updated!", "success");
 }
 
 // Remove item from cart
 function removeCartItem(itemId) {
-    fetch(`/cart/remove/${itemId}`, {
-        method: "POST",
-        headers: {
-            "X-CSRF-TOKEN": document
-                .querySelector('meta[name="csrf-token"]')
-                .getAttribute("content"),
-        },
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                // Remove item row from table
-                document.getElementById(`cart-item-${itemId}`).remove();
+    let cart = JSON.parse(localStorage.getItem("userCart")) || [];
 
-                // Update total
-                document.getElementById(
-                    "cart-total"
-                ).textContent = `LKR ${data.total}`;
+    // Filter out the item
+    cart = cart.filter((item) => item.id !== itemId);
 
-                // Update cart count
-                updateCartCount();
+    // Save updated cart
+    localStorage.setItem("userCart", JSON.stringify(cart));
 
-                // Show empty cart message if cart is empty
-                if (data.count === 0) {
-                    document
-                        .getElementById("cart-table")
-                        .classList.add("hidden");
-                    document
-                        .getElementById("empty-cart")
-                        .classList.remove("hidden");
-                    document
-                        .getElementById("checkout-button")
-                        .classList.add("hidden");
-                }
+    // Update UI
+    if (document.getElementById(`cart-item-${itemId}`)) {
+        document.getElementById(`cart-item-${itemId}`).remove();
 
-                showNotification("Item removed from cart!", "success");
-            } else {
-                showNotification(
-                    data.message || "Failed to remove item from cart.",
-                    "error"
-                );
+        // Update total
+        const total = cart.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+        );
+        if (document.getElementById("cart-total")) {
+            document.getElementById(
+                "cart-total"
+            ).textContent = `LKR ${total.toFixed(2)}`;
+        }
+
+        // Show empty cart message if cart is empty
+        if (
+            cart.length === 0 &&
+            document.getElementById("cart-table") &&
+            document.getElementById("empty-cart")
+        ) {
+            document.getElementById("cart-table").classList.add("hidden");
+            document.getElementById("empty-cart").classList.remove("hidden");
+
+            if (document.getElementById("checkout-button")) {
+                document
+                    .getElementById("checkout-button")
+                    .classList.add("hidden");
             }
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            showNotification("An error occurred. Please try again.", "error");
-        });
+        }
+    }
+
+    // Update cart count
+    updateCartCount();
+
+    showNotification("Item removed from cart!", "success");
 }
 
 // Update cart count in header
 function updateCartCount() {
-    fetch("/cart", {
-        headers: {
-            "X-Requested-With": "XMLHttpRequest",
-        },
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            const cartCountElements = document.querySelectorAll(".cart-count");
-            cartCountElements.forEach((element) => {
-                element.textContent = data.count;
-            });
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-        });
+    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
+    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+
+    // Update all cart count elements
+    document.querySelectorAll(".cart-count").forEach((element) => {
+        element.textContent = totalItems;
+    });
 }
 
 // Show notification

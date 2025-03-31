@@ -19,12 +19,19 @@
                     <x-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.index')">
                         {{ __('Products') }}
                     </x-nav-link>
-         
                 </div>
             </div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ml-6">
+                <!-- Cart Icon -->
+                <a href="{{ route('cart.index') }}" class="mr-4 relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 hover:text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs cart-count">0</span>
+                </a>
+                
                 @if(Auth::check())
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -106,6 +113,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.index')">
                 {{ __('Products') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('cart.index') }}" :active="request()->routeIs('cart.index')">
+                {{ __('Cart') }} <span class="ml-1 bg-red-500 text-white rounded-full w-5 h-5 inline-flex items-center justify-center text-xs cart-count">0</span>
             </x-responsive-nav-link>
         </div>
 

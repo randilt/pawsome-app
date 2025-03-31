@@ -35,7 +35,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span id="cart-count" class="cart-badge">0</span>
+                    <span class="cart-count absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
                 </a>
 
                 <!-- Settings Dropdown -->
@@ -119,7 +119,7 @@
                 {{ __('Contact') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('cart.index') }}" :active="request()->routeIs('cart.index')">
-                {{ __('Cart') }}
+                {{ __('Cart') }} <span class="cart-count ml-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 inline-flex items-center justify-center">0</span>
             </x-responsive-nav-link>
         </div>
 
@@ -176,4 +176,21 @@
         @endauth
     </div>
 </nav>
+
+<script>
+    // Initialize cart count on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartCount();
+    });
+    
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('userCart')) || [];
+        const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+        
+        // Update all cart count elements
+        document.querySelectorAll('.cart-count').forEach(element => {
+            element.textContent = totalItems;
+        });
+    }
+</script>
 

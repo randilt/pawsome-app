@@ -56,10 +56,13 @@
         </div>
     </main>
     
-    @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("Checkout page loaded");
             loadCheckout();
+            
+            // Handle form submission
+            document.getElementById('checkout-form').addEventListener('submit', handleCheckout);
         });
         
         function loadCheckout() {
@@ -67,8 +70,11 @@
             const checkoutTotal = document.getElementById('checkout-total');
             const cartItems = JSON.parse(localStorage.getItem('userCart')) || [];
             
+            console.log("Loading checkout with items:", cartItems);
+            
             // Redirect to cart if no items
             if (cartItems.length === 0) {
+                console.log("No items in cart, redirecting to cart page");
                 window.location.href = '{{ route('cart.index') }}';
                 return;
             }
@@ -81,67 +87,114 @@
                 totalPrice += itemTotal;
                 
                 checkoutHTML += `
-                    <div class="flex justify-between items-center mb-2">
-                        <span>${item.name} x ${item.quantity}</span>
+                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-200">
+                        <div class="flex items-center">
+                            <img src="${item.imageUrl || '/placeholder.svg'}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md mr-3">
+                            <div>
+                                <p class="font-medium">${item.name}</p>
+                                <p class="text-sm text-gray-500">Qty: ${item.quantity}</p>
+                            </div>
+                        </div>
                         <span>LKR ${itemTotal.toFixed(2)}</span>
                     </div>
                 `;
             });
             
             checkoutItems.innerHTML = checkoutHTML;
-            checkoutTotal.innerHTML = `Total: LKR ${totalPrice.toFixed(2)}`;
-            
-            const checkoutForm = document.getElementById('checkout-form');
-            checkoutForm.addEventListener('submit', handleCheckout);
+            checkoutTotal.innerHTML = `Total: <span class="text-primary">LKR ${totalPrice.toFixed(2)}</span>`;
         }
         
         async function handleCheckout(event) {
             event.preventDefault();
+            console.log("Checkout form submitted");
             
             try {
                 const formData = new FormData(event.target);
                 const cartItems = JSON.parse(localStorage.getItem('userCart')) || [];
                 
+                if (cartItems.length === 0) {
+                    showNotification('Your cart is empty', 'error');
+                    return;
+                }
+                
                 const payload = {
                     shipping_address: `${formData.get('address')}, ${formData.get('city')}`,
                     items: cartItems.map((item) => ({
-                        product_id: parseInt(item.id),
-                        quantity: item.quantity,
-                    })),
+                        product_id: item.id,
+                        quantity: item.quantity
+                    }))
                 };
+                
+                console.log("Sending order payload:", payload);
                 
                 // Get CSRF token
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 
+                showNotification('Processing your order...', 'success');
+                
+                // Actually send the request to the server
                 const response = await fetch('{{ route('orders.store') }}', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payload)
                 });
                 
+                console.log("Order response status:", response.status);
+                
+                const responseData = await response.json();
+                console.log("Order response data:", responseData);
+                
                 if (!response.ok) {
-                    const error = await response.json();
                     if (response.status === 401) {
-                        alert('Please login to place an order');
-                        window.location.href = '{{ route('login') }}';
+                        showNotification('Please login to place an order', 'error');
+                        setTimeout(() => {
+                            window.location.href = '{{ route('login') }}';
+                        }, 2000);
                         return;
                     }
-                    throw new Error(error.error || 'Order creation failed');
+                    throw new Error(responseData.error || 'Order creation failed');
                 }
                 
+                // If we get here, the order was successfully placed
                 // Clear cart and redirect to orders page
                 localStorage.removeItem('userCart');
-                window.location.href = '{{ route('orders.index') }}';
+                showNotification('Order placed successfully!', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = '{{ route('home') }}';
+                }, 2000);
                 
             } catch (error) {
                 console.error('Checkout error:', error);
-                alert(error.message || 'An error occurred while placing the order');
+                showNotification(error.message || 'An error occurred while placing the order', 'error');
             }
         }
+        
+        function showNotification(message, type = 'success') {
+            console.log("Notification:", message, type);
+            
+            const notification = document.createElement("div");
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-md z-50 ${
+                type === "success" ? "bg-green-500" : "bg-red-500"
+            } text-white`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add(
+                    "opacity-0",
+                    "transition-opacity",
+                    "duration-500"
+                );
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
     </script>
-    @endpush
 </x-app-layout>
 

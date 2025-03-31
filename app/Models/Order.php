@@ -12,34 +12,13 @@ class Order extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $fillable = [
         'user_id',
         'total_amount',
-        'status',
         'shipping_address',
-        'shipping_city',
-        'shipping_state',
-        'shipping_zip',
-        'shipping_country',
-        'billing_address',
-        'billing_city',
-        'billing_state',
-        'billing_zip',
-        'billing_country',
-        'payment_method',
-        'payment_status',
-        'tracking_number',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'total_amount' => 'decimal:2',
+        'status',
     ];
 
     /**
@@ -51,7 +30,7 @@ class Order extends Model
     }
 
     /**
-     * Get the order items for the order.
+     * Get the items for the order.
      */
     public function orderItems()
     {

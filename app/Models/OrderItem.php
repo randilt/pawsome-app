@@ -12,26 +12,17 @@ class OrderItem extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $fillable = [
         'order_id',
         'product_id',
         'quantity',
-        'price',
+        'price_at_time',
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'price' => 'decimal:2',
-    ];
-
-    /**
-     * Get the order that owns the order item.
+     * Get the order that owns the item.
      */
     public function order()
     {
@@ -39,7 +30,7 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the product that owns the order item.
+     * Get the product that owns the item.
      */
     public function product()
     {
