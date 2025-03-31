@@ -2,178 +2,127 @@
     <x-slot name="title">Dashboard</x-slot>
     <x-slot name="header">Dashboard</x-slot>
     
-   <!-- Statistics -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold mb-2">Total Products</h3>
-            <p class="text-3xl font-bold text-primary">{{ $stats['total_products'] }}</p>
-            <p class="text-sm text-gray-500 mt-2">{{ $stats['out_of_stock_products'] }} out of stock</p>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-500 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm">Total Orders</p>
+                    <p class="text-2xl font-semibold">{{ $totalOrders }}</p>
+                </div>
+            </div>
         </div>
         
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold mb-2">Total Orders</h3>
-            <p class="text-3xl font-bold text-primary">{{ $stats['total_orders'] }}</p>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-500 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm">Total Revenue</p>
+                    <p class="text-2xl font-semibold">LKR {{ number_format($totalRevenue, 2) }}</p>
+                </div>
+            </div>
         </div>
         
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold mb-2">Total Users</h3>
-            <p class="text-3xl font-bold text-primary">{{ $stats['total_users'] }}</p>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 text-purple-500 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm">Total Customers</p>
+                    <p class="text-2xl font-semibold">{{ $totalCustomers }}</p>
+                </div>
+            </div>
         </div>
         
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold mb-2">Total Revenue</h3>
-            <p class="text-3xl font-bold text-primary">LKR {{ number_format($stats['revenue'], 2) }}</p>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-yellow-100 text-yellow-500 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm">Total Products</p>
+                    <p class="text-2xl font-semibold">{{ $totalProducts }}</p>
+                </div>
+            </div>
         </div>
     </div>
     
-   <!-- Chart -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h3 class="text-xl font-semibold mb-4">Price Distribution</h3>
-        <canvas id="priceChart"></canvas>
-    </div>
-    
-   <!-- Recent Orders -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-semibold">Recent Orders</h3>
-            <a href="{{ route('admin.orders.index') }}" class="text-primary hover:underline">View All</a>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold mb-4">Recent Orders</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($recentOrders as $order)
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $order->id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $order->user->name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">LKR {{ number_format($order->total_amount, 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($order->status == 'pending')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                @elseif($order->status == 'processing')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Processing</span>
+                                @elseif($order->status == 'completed')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                @elseif($order->status == 'cancelled')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $order->created_at->format('M d, Y') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 text-right">
+                <a href="{{ route('admin.orders.index') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View All Orders →</a>
+            </div>
         </div>
         
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($stats['recent_orders'] as $order)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">#{{ $order->id }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $order->user->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $order->user->email }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">LKR {{ number_format($order->total_amount, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    @if($order->status == 'pending') bg-yellow-100 text-yellow-800
-                                    @elseif($order->status == 'processing') bg-blue-100 text-blue-800
-                                    @elseif($order->status == 'shipped') bg-purple-100 text-purple-800
-                                    @elseif($order->status == 'delivered') bg-green-100 text-green-800
-                                    @elseif($order->status == 'cancelled') bg-red-100 text-red-800
-                                    @endif">
-                                    {{ ucfirst($order->status) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $order->created_at->format('M d, Y') }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No recent orders found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold mb-4">Popular Products</h2>
+            <div class="space-y-4">
+                @foreach($popularProducts as $product)
+                <div class="flex items-center">
+                    <img src="{{ $product->image_url ?? 'https://via.placeholder.com/50x50' }}" alt="{{ $product->name }}" class="w-12 h-12 object-cover rounded mr-4">
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium">{{ $product->name }}</h3>
+                        <p class="text-xs text-gray-500">{{ $product->category->name }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium">LKR {{ number_format($product->price, 2) }}</p>
+                        <p class="text-xs text-gray-500">{{ $product->sales_count }} sold</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            <div class="mt-4 text-right">
+                <a href="{{ route('admin.products.index') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View All Products →</a>
+            </div>
         </div>
     </div>
-    
-   <!-- Low Stock Products -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-semibold">Low Stock Products</h3>
-            <a href="{{ route('admin.products.index') }}" class="text-primary hover:underline">View All Products</a>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($stats['low_stock_products'] as $product)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <img class="h-10 w-10 rounded-full" src="{{ $product->image_url ?? 'https://via.placeholder.com/40x40' }}" alt="{{ $product->name }}">
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $product->category->name }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">LKR {{ number_format($product->price, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-red-600 font-semibold">{{ $product->stock_quantity }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <a href="{{ route('admin.products.edit', $product->id) }}" class="text-primary hover:text-primary-dark">Edit</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No low stock products found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Price distribution chart
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            const priceChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Rs.0-Rs.200', 'Rs.201-Rs.400', 'Rs.401-Rs.600', 'Rs.601-Rs.800', 'Rs.801-Rs.2000', 'Rs.2000+'],
-                    datasets: [{
-                        label: 'Number of Products',
-                        data: [
-                            {{ $priceRanges['0-200'] }},
-                            {{ $priceRanges['201-400'] }},
-                            {{ $priceRanges['401-600'] }},
-                            {{ $priceRanges['601-800'] }},
-                            {{ $priceRanges['801-2000'] }},
-                            {{ $priceRanges['2000+'] }}
-                        ],
-                        backgroundColor: '#FF9800',
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        });
-    </script>
-    @endpush
 </x-admin-layout>
 

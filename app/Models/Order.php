@@ -19,6 +19,18 @@ class Order extends Model
         'total_amount',
         'status',
         'shipping_address',
+        'shipping_city',
+        'shipping_state',
+        'shipping_zip',
+        'shipping_country',
+        'billing_address',
+        'billing_city',
+        'billing_state',
+        'billing_zip',
+        'billing_country',
+        'payment_method',
+        'payment_status',
+        'tracking_number',
     ];
 
     /**
@@ -39,27 +51,11 @@ class Order extends Model
     }
 
     /**
-     * Get the items for the order.
+     * Get the order items for the order.
      */
-    public function items()
+    public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
-    }
-
-    /**
-     * Scope a query to filter orders by status.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param  string|null  $status
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeStatus($query, $status = null)
-    {
-        if ($status) {
-            return $query->where('status', $status);
-        }
-
-        return $query;
     }
 }
 

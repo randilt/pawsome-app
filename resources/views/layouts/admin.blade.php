@@ -1,4 +1,4 @@
-&lt;!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -7,38 +7,38 @@
 
     <title>{{ config('app.name', 'Pawsome') }} Admin | {{ $title ?? 'Dashboard' }}</title>
 
-   <!-- Fonts -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-   <!-- Scripts -->
+    <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-   <!-- Chart.js -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-   <!-- SweetAlert2 -->
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="font-nunito bg-gray-100">
     <div class="flex h-screen">
-       <!-- Sidebar -->
+        <!-- Sidebar -->
         @include('admin.partials.sidebar')
 
-       <!-- Main Content -->
+        <!-- Main Content -->
         <div class="flex-1 overflow-y-auto p-8">
             <div class="flex justify-between items-center mb-8">
                 <h1 class="text-3xl font-bold">{{ $header ?? 'Dashboard' }}</h1>
                 <a href="{{ route('home') }}" class="underline">Back to home</a>
             </div>
 
-           <!-- Page Content -->
+            <!-- Page Content -->
             <main>
                 {{ $slot }}
             </main>
         </div>
     </div>
 
-   <!-- Additional Scripts -->
+    <!-- Additional Scripts -->
     @stack('scripts')
 </body>
 </html>

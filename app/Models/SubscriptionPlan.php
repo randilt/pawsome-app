@@ -18,7 +18,9 @@ class SubscriptionPlan extends Model
         'name',
         'description',
         'price',
-        'duration_months',
+        'duration_in_days',
+        'features',
+        'is_active',
     ];
 
     /**
@@ -28,15 +30,24 @@ class SubscriptionPlan extends Model
      */
     protected $casts = [
         'price' => 'decimal:2',
-        'duration_months' => 'integer',
+        'features' => 'array',
+        'is_active' => 'boolean',
     ];
 
     /**
-     * Get the subscriptions for the plan.
+     * Get the customer subscriptions for the subscription plan.
      */
-    public function subscriptions()
+    public function customerSubscriptions()
     {
-        return $this->hasMany(CustomerSubscription::class, 'plan_id');
+        return $this->hasMany(CustomerSubscription::class);
+    }
+
+    /**
+     * Scope a query to only include active subscription plans.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }
 

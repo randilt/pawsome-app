@@ -22,22 +22,26 @@ Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit');
 
-// Dashboard route
-Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
-
 // Product routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/categories/{category}', [ProductController::class, 'byCategory'])->name('categories.show');
 
 // Cart routes
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update/{item}', [CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/remove/{item}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.process');
 
 // Subscription routes
 Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+
+// Dashboard route
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    return view('dashboard');
+})->name('dashboard');
 
 // Authentication routes (provided by Jetstream)
 // These include login, register, password reset, etc.
@@ -60,41 +64,18 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
 });
 
-// API Routes (temporary solution)
-Route::prefix('api')->group(function () {
-    // Public routes
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-
-    // Product routes
-    Route::get('/products', [ProductController::class, 'apiIndex']);
-    Route::get('/products/{id}', [ProductController::class, 'apiShow']);
-
-    // Protected routes
-    Route::middleware('auth:sanctum')->group(function () {
-        // Auth routes
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/user', [AuthController::class, 'user']);
-        
-        // Order routes
-        Route::get('/orders', [OrderController::class, 'index']);
-        Route::post('/orders', [OrderController::class, 'store']);
-        Route::get('/orders/{id}', [OrderController::class, 'show']);
-    });
-});
-
 // Admin routes
 Route::prefix('admin')->name('admin.')->group(function () {
     // Admin authentication
     Route::get('/login', [AdminController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AdminController::class, 'login']);
+    Route::post('/login', [AdminController::class, 'login'])->name('login.post');
     
     // Protected admin routes
     Route::middleware(['auth:admin'])->group(function () {
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         
-        // Product management
+        // Admin product management
         Route::get('/products', [ProductController::class, 'adminIndex'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');

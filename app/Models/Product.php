@@ -15,15 +15,14 @@ class Product extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'category_id',
         'name',
         'description',
-        'long_description',
         'price',
         'stock_quantity',
         'image_url',
-        'variants',
-        'status',
+        'category_id',
+        'is_featured',
+        'is_active',
     ];
 
     /**
@@ -33,8 +32,8 @@ class Product extends Model
      */
     protected $casts = [
         'price' => 'decimal:2',
-        'stock_quantity' => 'integer',
-        'variants' => 'json',
+        'is_featured' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -55,53 +54,18 @@ class Product extends Model
 
     /**
      * Scope a query to only include active products.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('is_active', true);
     }
 
     /**
-     * Scope a query to filter products by price range.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param  float|null  $min
-     * @param  float|null  $max
-     * @return \Illuminate\Database\Eloquent\Builder
+     * Scope a query to only include featured products.
      */
-    public function scopePriceRange($query, $min = null, $max = null)
+    public function scopeFeatured($query)
     {
-        if ($min !== null) {
-            $query->where('price', '>=', $min);
-        }
-
-        if ($max !== null) {
-            $query->where('price', '<=', $max);
-        }
-
-        return $query;
-    }
-
-    /**
-     * Scope a query to filter products by search term.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param  string|null  $search
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeSearch($query, $search = null)
-    {
-        if ($search) {
-            return $query->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        return $query;
+        return $query->where('is_featured', true);
     }
 }
 

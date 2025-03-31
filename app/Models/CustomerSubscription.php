@@ -16,10 +16,12 @@ class CustomerSubscription extends Model
      */
     protected $fillable = [
         'user_id',
-        'plan_id',
+        'subscription_plan_id',
         'start_date',
         'end_date',
         'status',
+        'payment_method',
+        'payment_status',
     ];
 
     /**
@@ -28,12 +30,12 @@ class CustomerSubscription extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
     ];
 
     /**
-     * Get the user that owns the subscription.
+     * Get the user that owns the customer subscription.
      */
     public function user()
     {
@@ -41,23 +43,19 @@ class CustomerSubscription extends Model
     }
 
     /**
-     * Get the plan that owns the subscription.
+     * Get the subscription plan that owns the customer subscription.
      */
-    public function plan()
+    public function subscriptionPlan()
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+        return $this->belongsTo(SubscriptionPlan::class);
     }
 
     /**
-     * Scope a query to only include active subscriptions.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * Determine if the subscription is active.
      */
-    public function scopeActive($query)
+    public function isActive()
     {
-        return $query->where('status', 'active')
-            ->where('end_date', '>', now());
+        return $this->status === 'active' && $this->end_date->isFuture();
     }
 }
 

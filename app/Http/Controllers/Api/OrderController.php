@@ -33,7 +33,7 @@ class OrderController extends Controller
                 $product = Product::findOrFail($item['product_id']);
                 
                 // Check stock
-                if ($product->stock_quantity< $item['quantity']) {
+                if ($product->stock_quantity < $item['quantity']) {
                     throw new \Exception("Insufficient stock for product: {$product->name}");
                 }
                 

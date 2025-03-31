@@ -18,7 +18,7 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'quantity',
-        'price_at_time',
+        'price',
     ];
 
     /**
@@ -27,12 +27,11 @@ class OrderItem extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'quantity' => 'integer',
-        'price_at_time' => 'decimal:2',
+        'price' => 'decimal:2',
     ];
 
     /**
-     * Get the order that owns the item.
+     * Get the order that owns the order item.
      */
     public function order()
     {
@@ -40,7 +39,7 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the product that owns the item.
+     * Get the product that owns the order item.
      */
     public function product()
     {
