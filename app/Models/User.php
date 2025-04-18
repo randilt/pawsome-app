@@ -64,4 +64,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    
+    /**
+     * Get the orders for the user.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get the customer subscriptions for the user.
+     */
+    public function customerSubscriptions()
+    {
+        return $this->hasMany(CustomerSubscription::class);
+    }
 }
