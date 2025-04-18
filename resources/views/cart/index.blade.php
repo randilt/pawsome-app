@@ -29,7 +29,7 @@
                 cartContainer.innerHTML = `
                     <div class="text-center py-8">
                         <p class="text-xl mb-4">Your cart is empty</p>
-                        <a href="{{ route('products.index') }}" class="bg-primary text-white py-2 px-4 rounded-full hover:bg-opacity-90 transition duration-300">Start Shopping</a>
+                        <a href="{{ route('products.index') }}" class="bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-opacity-90 transition duration-300">Start Shopping</a>
                     </div>
                 `;
                 cartSummary.innerHTML = '';

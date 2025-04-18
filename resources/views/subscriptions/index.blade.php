@@ -64,7 +64,7 @@
                                     </form>
                                 @endif
                             @else
-                                <a href="{{ route('login') }}" class="block text-center bg-primary text-white py-3 px-6 rounded-md hover:bg-primary-dark transition duration-300">
+                                <a href="{{ route('login') }}" class="block text-center bg-blue-500 text-white py-3 px-6 rounded-md hover:bg-primary-dark transition duration-300">
                                     Login to Subscribe
                                 </a>
                             @endif

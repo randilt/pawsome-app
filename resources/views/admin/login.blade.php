@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="flex items-center justify-end mt-4">
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-dark focus:outline-none focus:border-primary-dark focus:ring focus:ring-primary focus:ring-opacity-50 active:bg-primary-dark transition">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-dark focus:outline-none focus:border-primary-dark focus:ring focus:ring-primary focus:ring-opacity-50 active:bg-primary-dark transition">
                         {{ __('Log in') }}
                     </button>
                 </div>

@@ -114,5 +114,34 @@ class OrderController extends Controller
             return response()->json(['error' => 'Failed to place order: ' . $e->getMessage()], 500);
         }
     }
+    /**
+     * Display a listing of orders for admin.
+     */
+    public function adminIndex()
+    {
+        $orders = Order::with(['user', 'orderItems.product'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        
+        return view('admin.orders.index', compact('orders'));
+    }
+
+    /**
+     * Update the status of an order.
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,processing,completed,cancelled',
+        ]);
+        
+        $order = Order::findOrFail($id);
+        $order->update([
+            'status' => $validated['status'],
+        ]);
+        
+        return redirect()->route('admin.orders.index')
+            ->with('success', 'Order status updated successfully.');
+    }
 }
 

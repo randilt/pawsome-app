@@ -2,7 +2,7 @@
     <x-slot name="title">Premium Pet Supplies</x-slot>
     
    <!-- Hero Section with Subscription Box Promotion -->
-    <section class="bg-primary text-white py-8 relative">
+    <section class="bg-blue-500 text-white py-8 relative">
        <!-- Background image with overlay -->
         <div class="absolute inset-0 z-0">
             <img src="https://images.unsplash.com/photo-1450778869180-41d0601e046e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1586&q=80" alt="Happy pets background" class="w-full h-full object-cover" />
@@ -52,7 +52,7 @@
                 @endforeach
             </div>
             <div class="text-center mt-8">
-                <a href="{{ route('products.index') }}" class="inline-block bg-primary text-white px-6 py-3 rounded-md hover:bg-opacity-90 transition duration-300">View All Products</a>
+                <a href="{{ route('products.index') }}" class="inline-block bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-opacity-90 transition duration-300">View All Products</a>
             </div>
         </div>
     </section>

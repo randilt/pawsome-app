@@ -3,7 +3,7 @@
     <x-slot name="header">Products Management</x-slot>
     
     <div class="mb-6 flex justify-end">
-        <a href="{{ route('admin.products.create') }}" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition duration-300">
+        <a href="{{ route('admin.products.create') }}" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition duration-300">
             Add New Product
         </a>
     </div>

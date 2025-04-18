@@ -115,5 +115,103 @@ class SubscriptionController extends Controller
             
         return view('profile.subscriptions', compact('subscriptions'));
     }
+
+    /**
+     * Display a listing of subscription plans for admin.
+     */
+    public function adminIndex()
+    {
+        $plans = SubscriptionPlan::orderBy('price')->get();
+        
+        return view('admin.subscriptions.plans.index', compact('plans'));
+    }
+
+    /**
+     * Store a new subscription plan.
+     */
+    public function storePlan(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
+            'duration_in_days' => 'required|integer|min:1',
+            'features' => 'nullable|array',
+            'is_active' => 'boolean',
+        ]);
+        
+        // Convert features from array to JSON if needed
+        if (isset($validated['features']) && is_array($validated['features'])) {
+            $validated['features'] = array_filter($validated['features']); // Remove empty values
+        }
+        
+        $plan = SubscriptionPlan::create($validated);
+        
+        return redirect()->route('admin.subscriptions.plans')
+            ->with('success', 'Subscription plan created successfully.');
+    }
+
+    /**
+     * Update an existing subscription plan.
+     */
+    public function updatePlan(Request $request, $id)
+    {
+        $plan = SubscriptionPlan::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
+            'duration_in_days' => 'required|integer|min:1',
+            'features' => 'nullable|array',
+            'is_active' => 'boolean',
+        ]);
+        
+        // Set is_active to false if not present in request
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = false;
+        }
+        
+        // Convert features from array to JSON if needed
+        if (isset($validated['features']) && is_array($validated['features'])) {
+            $validated['features'] = array_filter($validated['features']); // Remove empty values
+        }
+        
+        $plan->update($validated);
+        
+        return redirect()->route('admin.subscriptions.plans')
+            ->with('success', 'Subscription plan updated successfully.');
+    }
+
+    /**
+     * Remove a subscription plan.
+     */
+    public function destroyPlan($id)
+    {
+        $plan = SubscriptionPlan::findOrFail($id);
+        
+        // Check if plan has any subscriptions
+        if ($plan->customerSubscriptions()->count() > 0) {
+            return redirect()->route('admin.subscriptions.plans')
+                ->with('error', 'Cannot delete a plan with active subscriptions.');
+        }
+        
+        $plan->delete();
+        
+        return redirect()->route('admin.subscriptions.plans')
+            ->with('success', 'Subscription plan deleted successfully.');
+    }
+
+    /**
+     * Display a listing of customer subscriptions for admin.
+     */
+    public function adminSubscriptions()
+    {
+        $subscriptions = CustomerSubscription::with(['user', 'subscriptionPlan'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        
+        return view('admin.subscriptions.index', compact('subscriptions'));
+    }
 }
 

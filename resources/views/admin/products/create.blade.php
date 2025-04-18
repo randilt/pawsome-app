@@ -107,7 +107,7 @@
                 <a href="{{ route('admin.products.index') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md mr-2 hover:bg-gray-300 transition duration-300">
                     Cancel
                 </a>
-                <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition duration-300">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition duration-300">
                     Create Product
                 </button>
             </div>
