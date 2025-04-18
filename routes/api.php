@@ -12,7 +12,7 @@ use App\Http\Controllers\Api\ProductController;
 |--------------------------------------------------------------------------
 */
 
-dd('API routes file is loading!');
+// dd('API routes file is loading!');
 
 Route::get('/test', function() {
     return response()->json(['message' => 'API works!']);

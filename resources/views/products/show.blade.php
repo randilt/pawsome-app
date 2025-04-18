@@ -63,7 +63,7 @@
                     </div>
                 </div>
                 
-                <button id="add-to-cart-btn" data-product-id="{{ $product->id }}" class="w-full bg-primary text-white py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300 {{ $product->stock_quantity <= 0 ? 'opacity-50 cursor-not-allowed' : '' }}" {{ $product->stock_quantity <= 0 ? 'disabled' : '' }}>
+                <button id="add-to-cart-btn" data-product-id="{{ $product->id }}" class="w-full bg-blue-500 text-white py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300 {{ $product->stock_quantity <= 0 ? 'opacity-50 cursor-not-allowed' : '' }}" {{ $product->stock_quantity <= 0 ? 'disabled' : '' }}>
                     {{ $product->stock_quantity <= 0 ? 'Out of Stock' : 'Add to Cart' }}
                 </button>
             </div>
@@ -280,3 +280,4 @@
     </script>
 </x-app-layout>
 
+        

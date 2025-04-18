@@ -60,7 +60,7 @@ class OrderController extends Controller
             
             // Create order items
             foreach ($orderItems as $item) {
-                $order->items()->create($item);
+                $order->orderItems()->create($item);
             }
             
             DB::commit();
@@ -68,7 +68,7 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order placed successfully!',
-                'order' => $order->load('items.product'),
+                'order' => $order->load('orderItems.product'),
             ]);
                 
         } catch (\Exception $e) {

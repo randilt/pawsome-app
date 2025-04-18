@@ -101,7 +101,7 @@
                             <h2 class="text-2xl font-semibold">Cart Summary</h2>
                             <div id="cart-total" class="text-2xl font-bold text-primary">LKR ${totalPrice.toFixed(2)}</div>
                         </div>
-                        <a href="{{ route('cart.checkout') }}" id="checkout-button" class="block w-full bg-primary text-white text-center py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300 mt-4" onclick="goToCheckout(event)">
+                        <a href="{{ route('cart.checkout') }}" id="checkout-button" class="block w-full bg-blue-500 text-white text-center py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300 mt-4" onclick="goToCheckout(event)">
                             Proceed to Checkout
                         </a>
                     </div>

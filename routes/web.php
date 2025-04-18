@@ -102,3 +102,24 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
+Route::prefix('api')->group(function () {
+    // Public routes
+    Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+    Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+    
+    // Product routes
+    Route::get('/products', [App\Http\Controllers\Api\ProductController::class, 'index']);
+    Route::get('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'show']);
+    
+    // Order routes that need authentication
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Auth routes
+        Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
+        Route::get('/user', [App\Http\Controllers\Api\AuthController::class, 'user']);
+        
+        // Order routes
+        Route::get('/orders', [App\Http\Controllers\Api\OrderController::class, 'index']);
+        Route::post('/orders', [App\Http\Controllers\Api\OrderController::class, 'store']);
+        Route::get('/orders/{id}', [App\Http\Controllers\Api\OrderController::class, 'show']);
+    });
+});

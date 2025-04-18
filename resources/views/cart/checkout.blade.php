@@ -50,7 +50,7 @@
                         </div>
                     </div>
                     
-                    <button type="submit" class="w-full bg-primary text-white py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300">Place Order</button>
+                    <button type="submit" class="w-full bg-blue-500 text-white py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300">Place Order</button>
                 </form>
             </div>
         </div>
@@ -132,12 +132,12 @@
                 
                 showNotification('Processing your order...', 'success');
                 
-                // Actually send the request to the server
-                const response = await fetch('{{ route('orders.store') }}', {
+                const response = await fetch('/api/orders', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(payload)
                 });
