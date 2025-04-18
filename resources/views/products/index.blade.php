@@ -47,8 +47,8 @@
                         </div>
                         
                         <div class="flex space-x-2">
-                            <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition duration-300">Apply Filters</button>
-                            <button type="button" id="reset-filters" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-300">Reset</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition duration-300">Apply Filters</button>
+                            <a href="{{ route('products.index') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-300 text-center">Reset</a>
                         </div>
                     </form>
                 </div>
@@ -124,7 +124,6 @@
             const filterForm = document.getElementById('filter-form');
             const sortSelect = document.getElementById('sort');
             const limitSelect = document.getElementById('limit');
-            const resetFiltersBtn = document.getElementById('reset-filters');
             
             // Handle sort change
             sortSelect.addEventListener('change', function() {
@@ -143,11 +142,6 @@
                 url.searchParams.set('limit', this.value);
                 
                 window.location.href = url.toString();
-            });
-            
-            // Reset filters
-            resetFiltersBtn.addEventListener('click', function() {
-                window.location.href = '{{ route('products.index') }}';
             });
         });
     </script>

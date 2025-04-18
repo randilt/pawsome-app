@@ -67,5 +67,35 @@ class Product extends Model
     {
         return $query->where('is_featured', true);
     }
-}
 
+    /**
+     * Scope a query to search products by name or description.
+     */
+    public function scopeSearch($query, $search)
+    {
+        if ($search) {
+            return $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        return $query;
+    }
+
+    /**
+     * Scope a query to filter products by price range.
+     */
+    public function scopePriceRange($query, $minPrice, $maxPrice)
+    {
+        if ($minPrice) {
+            $query->where('price', '>=', $minPrice);
+        }
+        
+        if ($maxPrice) {
+            $query->where('price', '<=', $maxPrice);
+        }
+        
+        return $query;
+    }
+}

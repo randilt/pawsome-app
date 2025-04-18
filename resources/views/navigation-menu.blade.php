@@ -19,6 +19,17 @@
                     <x-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.index')">
                         {{ __('Products') }}
                     </x-nav-link>
+                    @if(Auth::check())
+                        <x-nav-link href="{{ route('orders.index') }}" :active="request()->routeIs('orders.index')">
+                            {{ __('My Orders') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('profile.subscriptions') }}" :active="request()->routeIs('profile.subscriptions')">
+                            {{ __('My Subscriptions') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                            {{ __('Dashboard') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
