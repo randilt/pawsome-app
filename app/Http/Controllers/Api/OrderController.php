@@ -86,7 +86,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::with(['items.product'])
+        $orders = Order::with(['orderItems.product'])
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
@@ -99,7 +99,7 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['items.product'])
+        $order = Order::with(['orderItems.product'])
             ->where('user_id', auth()->id())
             ->findOrFail($id);
             
