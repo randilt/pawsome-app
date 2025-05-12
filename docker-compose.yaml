@@ -23,6 +23,8 @@ services:
     depends_on:
       - db
     restart: always
+    # Install MySQL client for connection check
+    command: bash -c "apt-get update && apt-get install -y default-mysql-client && apache2-foreground"
 
   db:
     image: mysql:5.7
@@ -36,6 +38,13 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    # Add healthcheck
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:5.1.3

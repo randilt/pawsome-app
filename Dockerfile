@@ -11,7 +11,8 @@ RUN apt-get update && \
     libjpeg-dev \
     libfreetype6-dev \
     libonig-dev \
-    libxml2-dev
+    libxml2-dev \
+    netcat-openbsd
 
 # Enable mod_rewrite
 RUN a2enmod rewrite
