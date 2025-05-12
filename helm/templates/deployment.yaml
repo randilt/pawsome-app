@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pawsome-laravel.fullname" . }}
+  labels:
+    {{- include "pawsome-laravel.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pawsome-laravel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pawsome-laravel.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /var/www/html/storage/logs
+              mkdir -p /var/www/html/storage/framework/cache
+              mkdir -p /var/www/html/storage/framework/sessions
+              mkdir -p /var/www/html/storage/framework/views
+              mkdir -p /var/www/html/bootstrap/cache
+              touch /var/www/html/storage/logs/laravel.log
+              chmod -R 777 /var/www/html/storage
+              chmod -R 777 /var/www/html/bootstrap/cache
+              chown -R www-data:www-data /var/www/html/storage
+              chown -R www-data:www-data /var/www/html/bootstrap/cache
+              mkdir -p /var/www/html/public/health-check
+              echo '<?php echo "OK"; ?>' > /var/www/html/public/health-check/index.php
+          volumeMounts:
+            - name: storage
+              mountPath: /var/www/html/storage
+            - name: cache
+              mountPath: /var/www/html/bootstrap/cache
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: APP_NAME
+              value: {{ .Values.laravel.appName | quote }}
+            - name: APP_ENV
+              value: {{ .Values.laravel.appEnv | quote }}
+            - name: APP_KEY
+              value: {{ .Values.laravel.appKey | quote }}
+            - name: APP_DEBUG
+              value: "true"
+            - name: APP_URL
+              value: {{ .Values.laravel.appUrl | quote }}
+            - name: LOG_CHANNEL
+              value: "stack"
+            - name: DB_CONNECTION
+              value: "mysql"
+            - name: DB_HOST
+              value: {{ include "pawsome-laravel.mysqlHost" . }}
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: {{ .Values.mysql.auth.database | quote }}
+            - name: DB_USERNAME
+              value: {{ .Values.mysql.auth.username | quote }}
+            - name: DB_PASSWORD
+              value: {{ .Values.mysql.auth.password | quote }}
+            - name: APACHE_DOCUMENT_ROOT
+              value: "/var/www/html/public"
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health-check
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health-check
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: storage
+              mountPath: /var/www/html/storage
+            - name: cache
+              mountPath: /var/www/html/bootstrap/cache
+      volumes:
+        - name: storage
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "pawsome-laravel.fullname" . }}-storage
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: cache
+          emptyDir: {}

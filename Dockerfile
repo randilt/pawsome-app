@@ -1,55 +1,53 @@
-FROM php:8.3-fpm-alpine AS base
+FROM php:8.2-apache
 
 # Install dependencies
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    mysql-client \
-    libpng-dev \
+RUN apt-get update && \
+    apt-get install -y \
     libzip-dev \
     zip \
-    unzip \
     git \
-    curl
+    unzip \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev
+
+# Enable mod_rewrite
+RUN a2enmod rewrite
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql zip gd bcmath pcntl
+RUN docker-php-ext-install pdo_mysql zip exif pcntl bcmath gd
 
-# Set working directory
-WORKDIR /var/www/html
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}/!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Configure nginx
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-
-# Configure supervisord
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-FROM base AS build
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html
 
 # Install composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy application files
+# Set the working directory
+WORKDIR /var/www/html
+
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
+
+# Install dependencies with more resilient settings
+RUN composer install --no-scripts --no-autoloader --prefer-dist --no-interaction
+
+# Copy the application code
 COPY . .
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Clear cache
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
-FROM base AS final
-
-# Copy optimized application from build stage
-COPY --from=build /var/www/html /var/www/html
-
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Generate autoloader and run scripts
+RUN composer dump-autoload --optimize && \
+    chmod +x /var/www/html/entrypoint.sh && \
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Expose port 80
 EXPOSE 80
 
-# Start supervisord
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Set the entrypoint script
+ENTRYPOINT ["/var/www/html/entrypoint.sh"]
