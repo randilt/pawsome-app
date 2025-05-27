@@ -14,27 +14,25 @@ use App\Http\Controllers\Api\ProductController;
 
 // dd('API routes file is loading!');
 
-Route::get('/test', function() {
-    return response()->json(['message' => 'API works!']);
+Route::get('/test', function () {
+    return response()->json(['message' => 'API routes are working!']);
 });
 
-// Public routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-
+Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+    
 // Product routes
-Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{id}', [ProductController::class, 'show']);
-
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::get('/products', [App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'show']);
+    
+// Order routes that need authentication
+Route::middleware(['auth:sanctum'])->group(function () {
     // Auth routes
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
+    Route::get('/user', [App\Http\Controllers\Api\AuthController::class, 'user']);
     
     // Order routes
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::post('/orders', [OrderController::class, 'store']);
-    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::get('/orders', [App\Http\Controllers\Api\OrderController::class, 'index']);
+    Route::post('/orders', [App\Http\Controllers\Api\OrderController::class, 'store']);
+    Route::get('/orders/{id}', [App\Http\Controllers\Api\OrderController::class, 'show']);
 });
-
