@@ -23,6 +23,23 @@
                 <p class="text-2xl font-bold text-primary mb-4">
                     LKR {{ number_format($product->price, 2) }}
                 </p>
+                
+                <!-- Average Rating Display -->
+                @if(isset($averageRating) && $averageRating > 0)
+                    <div class="flex items-center mb-4">
+                        <div class="flex items-center mr-2">
+                            @for($i = 1; $i <= 5; $i++)
+                                <svg class="w-5 h-5 {{ $i <= $averageRating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            @endfor
+                        </div>
+                        <span class="text-sm text-gray-600">
+                            {{ number_format($averageRating, 1) }} ({{ isset($reviews) ? $reviews->count() : 0 }} reviews)
+                        </span>
+                    </div>
+                @endif
+                
                 <p class="text-gray-600 mb-6">{{ $product->description }}</p>
 
                 <p>
@@ -74,6 +91,189 @@
             <h2 class="text-2xl font-bold mb-4">Product Description</h2>
             <p class="text-gray-600 mb-4">{!! nl2br(e($product->long_description)) !!}</p>
         </div>
+
+        {{-- Reviews Section --}}
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Customer Reviews</h2>
+            
+            {{-- Reviews Summary --}}
+            <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="text-4xl font-bold text-gray-900 mr-4">
+                            {{ isset($averageRating) && $averageRating ? number_format($averageRating, 1) : 'N/A' }}
+                        </div>
+                        <div>
+                            <div class="flex items-center mb-1">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <svg class="w-5 h-5 {{ isset($averageRating) && $i <= $averageRating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                @endfor
+                            </div>
+                            <p class="text-sm text-gray-600">Based on {{ isset($reviews) ? $reviews->count() : 0 }} reviews</p>
+                        </div>
+                    </div>
+                    
+                    @auth
+                        <button onclick="openReviewModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                            Write a Review
+                        </button>
+                    @else
+                        <a href="{{ route('login') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                            Login to Review
+                        </a>
+                    @endauth
+                </div>
+                
+                {{-- Rating Distribution --}}
+                @if(isset($ratingDistribution) && !empty($ratingDistribution) && count($ratingDistribution) > 0)
+                    <div class="mt-6">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Rating breakdown</h4>
+                        @php
+                            $ratingCounts = [];
+                            $totalReviews = 0;
+                            foreach($ratingDistribution as $rating) {
+                                $ratingCounts[$rating['_id']] = $rating['count'];
+                                $totalReviews += $rating['count'];
+                            }
+                        @endphp
+                        
+                        <div class="space-y-2">
+                            @for($i = 5; $i >= 1; $i--)
+                                @php
+                                    $count = $ratingCounts[$i] ?? 0;
+                                    $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+                                @endphp
+                                <div class="flex items-center text-sm">
+                                    <span class="w-3">{{ $i }}</span>
+                                    <svg class="w-4 h-4 text-yellow-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                    <div class="flex-1 mx-2">
+                                        <div class="bg-gray-200 rounded-full h-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: {{ $percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="w-8 text-right text-gray-600">{{ $count }}</span>
+                                </div>
+                            @endfor
+                        </div>
+                    </div>
+                @endif
+            </div>
+            
+            {{-- Individual Reviews --}}
+            <div class="space-y-6">
+                @if(isset($reviews) && $reviews->count() > 0)
+                    @foreach($reviews as $review)
+                        <div class="border-b border-gray-200 pb-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <h4 class="font-medium text-gray-900 mr-3">{{ $review['user_name'] ?? 'Anonymous' }}</h4>
+                                        @if(isset($review['verified_purchase']) && $review['verified_purchase'])
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Verified Purchase
+                                            </span>
+                                        @endif
+                                    </div>
+                                    
+                                    <div class="flex items-center mb-2">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <svg class="w-4 h-4 {{ isset($review['rating']) && $i <= $review['rating'] ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        @endfor
+                                        <span class="ml-2 text-sm text-gray-600">
+                                            {{ isset($review['created_at']) ? \Carbon\Carbon::parse($review['created_at'])->format('M d, Y') : 'Recently' }}
+                                        </span>
+                                    </div>
+                                    
+                                    @if(isset($review['title']))
+                                        <h5 class="font-medium text-gray-900 mb-2">{{ $review['title'] }}</h5>
+                                    @endif
+                                    @if(isset($review['comment']))
+                                        <p class="text-gray-700">{{ $review['comment'] }}</p>
+                                    @endif
+                                </div>
+                                
+                                <div class="text-right text-sm text-gray-500">
+                                    @if(isset($review['helpful_votes']) && $review['helpful_votes'] > 0)
+                                        <p>{{ $review['helpful_votes'] }} people found this helpful</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">No reviews yet. Be the first to review this product!</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Review Modal --}}
+        @auth
+        <div id="reviewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Write a Review</h3>
+                        <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="reviewForm" onsubmit="submitReview(event)">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                            <div class="flex items-center space-x-1">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <button type="button" onclick="setRating({{ $i }})" 
+                                            class="rating-star w-8 h-8 text-gray-300 hover:text-yellow-400 focus:outline-none">
+                                        <svg fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                    </button>
+                                @endfor
+                            </div>
+                            <input type="hidden" id="rating" name="rating" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Review Title</label>
+                            <input type="text" id="title" name="title" required maxlength="255"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Summarize your review in a few words">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">Your Review</label>
+                            <textarea id="comment" name="comment" rows="4" required minlength="10"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Tell others about your experience with this product"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeReviewModal()" 
+                                    class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Submit Review
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endauth
         
        <!-- Related Products -->
         @if(isset($relatedProducts) && count($relatedProducts) > 0)
@@ -277,7 +477,82 @@
                 }, 500);
             }, 3000);
         }
+
+        // Review modal functions
+        let selectedRating = 0;
+
+        function openReviewModal() {
+            document.getElementById('reviewModal').classList.remove('hidden');
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            document.getElementById('reviewForm').reset();
+            selectedRating = 0;
+            updateStarDisplay();
+        }
+
+        function setRating(rating) {
+            selectedRating = rating;
+            document.getElementById('rating').value = rating;
+            updateStarDisplay();
+        }
+
+        function updateStarDisplay() {
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < selectedRating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            });
+        }
+
+        function submitReview(event) {
+            event.preventDefault();
+            
+            if (selectedRating === 0) {
+                alert('Please select a rating');
+                return;
+            }
+            
+            const formData = new FormData(event.target);
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+            
+            fetch(`/products/{{ $product->id }}/reviews`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeReviewModal();
+                    showNotification('Review submitted successfully!', 'success');
+                    // Refresh page to show new review
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while submitting your review', 'error');
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit Review';
+            });
+        }
     </script>
 </x-app-layout>
-
-        

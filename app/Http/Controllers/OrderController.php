@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +100,19 @@ class OrderController extends Controller
                 // Update product stock
                 $product->stock_quantity -= $item['quantity'];
                 $product->save();
+
+                // Log purchase to MongoDB analytics
+                try {
+                    ProductAnalytics::logPurchase(
+                        $product->id,
+                        Auth::id(),
+                        $order->id,
+                        $item['quantity'],
+                        $product->price
+                    );
+                } catch (\Exception $e) {
+                    // Silent fail for analytics
+                }
             }
             
             DB::commit();
@@ -114,6 +128,7 @@ class OrderController extends Controller
             return response()->json(['error' => 'Failed to place order: ' . $e->getMessage()], 500);
         }
     }
+
     /**
      * Display a listing of orders for admin.
      */
@@ -122,8 +137,25 @@ class OrderController extends Controller
         $orders = Order::with(['user', 'orderItems.product'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
+
+        // Get order analytics from MongoDB
+        try {
+            $analytics = [
+                'recent_purchases' => ProductAnalytics::where('event_type', 'purchase')
+                    ->where('timestamp', '>=', now()->subDays(7))
+                    ->count(),
+                'top_selling_products' => $this->getTopSellingProducts(),
+                'conversion_stats' => $this->getConversionStats()
+            ];
+        } catch (\Exception $e) {
+            $analytics = [
+                'recent_purchases' => 0,
+                'top_selling_products' => [],
+                'conversion_stats' => []
+            ];
+        }
         
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders', 'analytics'));
     }
 
     /**
@@ -143,5 +175,75 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.index')
             ->with('success', 'Order status updated successfully.');
     }
-}
 
+    /**
+     * Get top selling products from MongoDB analytics
+     */
+    private function getTopSellingProducts($days = 30, $limit = 5)
+    {
+        try {
+            $pipeline = [
+                ['$match' => [
+                    'event_type' => 'purchase',
+                    'timestamp' => ['$gte' => now()->subDays($days)]
+                ]],
+                ['$group' => [
+                    '_id' => '$product_id',
+                    'total_sold' => ['$sum' => '$metadata.quantity'],
+                    'total_revenue' => ['$sum' => ['$multiply' => ['$metadata.quantity', '$metadata.price']]]
+                ]],
+                ['$sort' => ['total_sold' => -1]],
+                ['$limit' => $limit]
+            ];
+
+            return ProductAnalytics::raw(function($collection) use ($pipeline) {
+                return $collection->aggregate($pipeline);
+            });
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get conversion statistics from MongoDB
+     */
+    private function getConversionStats($days = 30)
+    {
+        try {
+            $pipeline = [
+                ['$match' => [
+                    'timestamp' => ['$gte' => now()->subDays($days)]
+                ]],
+                ['$group' => [
+                    '_id' => '$event_type',
+                    'count' => ['$sum' => 1]
+                ]]
+            ];
+
+            $results = ProductAnalytics::raw(function($collection) use ($pipeline) {
+                return $collection->aggregate($pipeline);
+            });
+
+            $stats = [];
+            foreach ($results as $result) {
+                $stats[$result['_id']] = $result['count'];
+            }
+
+            // Calculate conversion rates
+            $views = $stats['view'] ?? 0;
+            $cartAdds = $stats['cart_add'] ?? 0;
+            $purchases = $stats['purchase'] ?? 0;
+
+            return [
+                'views' => $views,
+                'cart_adds' => $cartAdds,
+                'purchases' => $purchases,
+                'view_to_cart_rate' => $views > 0 ? round(($cartAdds / $views) * 100, 2) : 0,
+                'cart_to_purchase_rate' => $cartAdds > 0 ? round(($purchases / $cartAdds) * 100, 2) : 0,
+                'overall_conversion_rate' => $views > 0 ? round(($purchases / $views) * 100, 2) : 0
+            ];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+}

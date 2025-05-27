@@ -62,6 +62,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+
+    // Product Review routes (MongoDB)
+    Route::post('/products/{id}/reviews', [ProductController::class, 'storeReview'])->name('products.reviews.store');
         
     // Subscription management
     Route::post('/subscriptions', [SubscriptionController::class, 'subscribe'])->name('subscriptions.subscribe');
@@ -80,7 +83,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         
-        // Admin product management
+        // Admin product management (with MongoDB analytics)
         Route::get('/products', [ProductController::class, 'adminIndex'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -88,13 +91,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
         Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
         
+        // Product Analytics routes (MongoDB)
+        Route::get('/products/{id}/analytics', [ProductController::class, 'showAnalytics'])->name('products.analytics');
+        
         // Category management
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
         
-        // Order management
+        // Order management (with MongoDB analytics)
         Route::get('/orders', [OrderController::class, 'adminIndex'])->name('orders.index');
         Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
         

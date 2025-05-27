@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
@@ -58,6 +60,13 @@ class CartController extends Controller
         }
         
         Session::put('cart', $cart);
+
+        // Log cart addition to MongoDB analytics
+        try {
+            ProductAnalytics::logCartAdd($productId, Auth::id(), $quantity);
+        } catch (\Exception $e) {
+            // Silent fail for analytics
+        }
         
         return response()->json([
             'success' => true,
@@ -95,8 +104,18 @@ class CartController extends Controller
             ], 400);
         }
         
+        $oldQuantity = $cart[$itemId]['quantity'];
         $cart[$itemId]['quantity'] = $quantity;
         Session::put('cart', $cart);
+
+        // Log quantity change to MongoDB analytics if increased
+        if ($quantity > $oldQuantity) {
+            try {
+                ProductAnalytics::logCartAdd($itemId, Auth::id(), $quantity - $oldQuantity);
+            } catch (\Exception $e) {
+                // Silent fail for analytics
+            }
+        }
         
         // Calculate subtotal and total
         $subtotal = $cart[$itemId]['price'] * $quantity;
@@ -111,11 +130,6 @@ class CartController extends Controller
             'subtotal' => number_format($subtotal, 2),
             'total' => number_format($total, 2),
             'count' => array_sum(array_column($cart, 'quantity'))
-        ]);
-    }
-
-    /**
-     * Remove item from cart.  => array_sum(array_column($cart, 'quantity'))
         ]);
     }
 
@@ -180,4 +194,3 @@ class CartController extends Controller
             ->with('success', 'Order placed successfully!');
     }
 }
-
