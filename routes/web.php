@@ -16,6 +16,42 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+Route::get('/health-check', function () {
+    try {
+        $checks = [
+            'laravel' => 'OK',
+            'timestamp' => now()->toISOString(),
+            'app_env' => config('app.env', 'unknown'),
+            'app_debug' => config('app.debug', false) ? 'true' : 'false',
+            'app_key_set' => config('app.key') ? 'YES' : 'NO',
+        ];
+
+        // Test database connection only if config is available
+        try {
+            if (config('database.default')) {
+                DB::connection()->getPdo();
+                $checks['database'] = 'connected';
+            } else {
+                $checks['database'] = 'no config';
+            }
+        } catch (\Exception $e) {
+            $checks['database'] = 'error: ' . $e->getMessage();
+        }
+
+        // Test MongoDB extension
+        $checks['mongodb_extension'] = extension_loaded('mongodb') ? 'loaded' : 'not loaded';
+        
+        return response()->json($checks, 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'ERROR',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'timestamp' => date('Y-m-d H:i:s')
+        ], 500);
+    }
+});
+
 // ONly for debugging
 Route::get('/debug-env', function () {
     if (config('app.env') !== 'production') {
@@ -44,29 +80,6 @@ Route::get('/debug-config', function () {
 
 Route::get('/debug-simple', function () {
     return 'Simple debug route working';
-});
-
-// Health check route
-Route::get('/health-check', function () {
-    try {
-        // Test database connection
-        DB::connection()->getPdo();
-        
-        // Test basic Laravel functionality
-        $status = [
-            'status' => 'OK',
-            'timestamp' => now()->toISOString(),
-            'database' => 'connected'
-        ];
-        
-        return response()->json($status, 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'ERROR',
-            'message' => $e->getMessage(),
-            'timestamp' => now()->toISOString()
-        ], 500);
-    }
 });
 
 // Public routes
