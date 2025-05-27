@@ -18,7 +18,25 @@ use Illuminate\Support\Facades\Route;
 
 // Health check route
 Route::get('/health-check', function () {
-    return response()->json(['status' => 'OK'], 200);
+    try {
+        // Test database connection
+        DB::connection()->getPdo();
+        
+        // Test basic Laravel functionality
+        $status = [
+            'status' => 'OK',
+            'timestamp' => now()->toISOString(),
+            'database' => 'connected'
+        ];
+        
+        return response()->json($status, 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'ERROR',
+            'message' => $e->getMessage(),
+            'timestamp' => now()->toISOString()
+        ], 500);
+    }
 });
 
 // Public routes
