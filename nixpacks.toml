@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ['php82', 'php82Packages.composer', 'nodejs_18']
+
+[phases.install]
+cmds = [
+    'pecl install mongodb',
+    'echo "extension=mongodb.so" >> /etc/php.ini',
+    'composer install --no-dev --optimize-autoloader'
+]
+
+[start]
+cmd = 'php artisan serve --host=0.0.0.0 --port=$PORT'
