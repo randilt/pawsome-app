@@ -1,3 +1,21 @@
+FROM node:18-alpine AS node-builder
+
+# Set working directory for Node
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install Node dependencies
+RUN npm ci
+
+# Copy source files needed for build
+COPY . .
+
+# Build assets
+RUN npm run build
+
+# PHP Stage
 FROM php:8.2-cli
 
 # Install system dependencies
@@ -30,11 +48,14 @@ WORKDIR /app
 # Copy composer files first for better caching
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies (ignore platform requirements for now)
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-req=ext-mongodb
 
 # Copy application code
 COPY . .
+
+# Copy built assets from node-builder stage
+COPY --from=node-builder /app/public/build /app/public/build
 
 # Now run composer again to ensure everything is properly installed
 RUN composer dump-autoload --optimize
@@ -49,11 +70,6 @@ RUN mkdir -p /app/bootstrap/cache
 
 # Clear any cached config that might have wrong env values
 RUN rm -rf /app/bootstrap/cache/*.php
-
-# DON'T cache config in Docker build - let it read env vars at runtime
-# RUN php artisan config:cache || echo "Config cache failed, continuing..."
-# RUN php artisan route:cache || echo "Route cache failed, continuing..."
-# RUN php artisan view:cache || echo "View cache failed, continuing..."
 
 # Create a startup script
 RUN echo '#!/bin/bash\n\
