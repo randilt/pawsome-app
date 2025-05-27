@@ -16,6 +16,36 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// ONly for debugging
+Route::get('/debug-env', function () {
+    if (config('app.env') !== 'production') {
+        return response()->json([
+            'APP_ENV' => env('APP_ENV'),
+            'APP_DEBUG' => env('APP_DEBUG'),
+            'APP_KEY_SET' => env('APP_KEY') ? 'YES' : 'NO',
+            'DB_CONNECTION' => env('DB_CONNECTION'),
+            'DB_HOST' => env('DB_HOST'),
+            'DB_DATABASE' => env('DB_DATABASE'),
+            'APP_URL' => env('APP_URL'),
+        ]);
+    }
+    return response('Debug only available in non-production', 403);
+});
+
+Route::get('/debug-config', function () {
+    return response()->json([
+        'app_env' => config('app.env'),
+        'app_debug' => config('app.debug'),
+        'app_key' => config('app.key') ? 'SET' : 'NOT SET',
+        'db_connection' => config('database.default'),
+        'app_url' => config('app.url'),
+    ]);
+});
+
+Route::get('/debug-simple', function () {
+    return 'Simple debug route working';
+});
+
 // Health check route
 Route::get('/health-check', function () {
     try {
