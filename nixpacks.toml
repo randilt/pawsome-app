@@ -1,9 +1,10 @@
 [phases.setup]
-nixPkgs = ['php82', 'php82Packages.composer', 'php82Extensions.mongodb', 'nodejs_18']
+nixPkgs = ['php82', 'php82Packages.composer', 'nodejs_18']
 
 [phases.install]
 cmds = [
-    'composer install --no-dev --optimize-autoloader'
+    'nix-env -iA nixpkgs.php82Extensions.mongodb',
+    'composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-mongodb'
 ]
 
 [start]
