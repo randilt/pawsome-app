@@ -1,19 +1,14 @@
 <?php
+// routes/api.php
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\ProductController;
+use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
 
-// dd('API routes file is loading!');
-
+// Test route
 Route::get('/test', function () {
     return response()->json(['message' => 'API routes are working!']);
 });
@@ -30,6 +25,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Auth routes
     Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('/user', [App\Http\Controllers\Api\AuthController::class, 'user']);
+    
+    // Cart management
+    Route::get('/cart', [App\Http\Controllers\Api\CartController::class, 'index']);
+    Route::post('/cart/add', [App\Http\Controllers\Api\CartController::class, 'add']);
+    Route::put('/cart/update/{item}', [App\Http\Controllers\Api\CartController::class, 'update']);
+    Route::delete('/cart/remove/{item}', [App\Http\Controllers\Api\CartController::class, 'remove']);
+    Route::delete('/cart/clear', [App\Http\Controllers\Api\CartController::class, 'clear']);
+    
+    // Checkout
+    Route::post('/cart/checkout', [App\Http\Controllers\Api\CartController::class, 'checkout']);
     
     // Order routes
     Route::get('/orders', [App\Http\Controllers\Api\OrderController::class, 'index']);

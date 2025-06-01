@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -63,6 +64,7 @@ class AdminController extends Controller
         $totalRevenue = Order::where('status', 'completed')->sum('total_amount');
         $totalCustomers = User::count();
         $totalProducts = Product::count();
+        $pendingContacts = Contact::where('status', 'pending')->count();
         
         // Get recent orders
         $recentOrders = Order::with('user')
@@ -80,14 +82,20 @@ class AdminController extends Controller
             ->orderBy('sales_count', 'desc')
             ->take(5)
             ->get();
+
+        $recentContacts = \App\Models\Contact::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
         
         return view('admin.dashboard', compact(
             'totalOrders',
             'totalRevenue',
             'totalCustomers',
             'totalProducts',
+            'pendingContacts',
             'recentOrders',
-            'popularProducts'
+            'popularProducts',
+            'recentContacts'
         ));
     }
 }

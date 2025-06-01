@@ -1,200 +1,178 @@
-<x-app-layout>
-    <x-slot name="title">Checkout</x-slot>
-    
-    <main class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl md:text-5xl font-extralight font-chewy mb-8">Checkout</h1>
-        
-        <div id="checkout-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4">Order Summary</h2>
-                <div id="checkout-items"></div>
-                <div id="checkout-total" class="mt-4 text-xl font-bold"></div>
+@extends('layouts.app')
+
+@section('title', 'Checkout')
+
+@section('content')
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+        @if(session('success'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                {{ session('success') }}
             </div>
-            
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4">Shipping Information</h2>
-                <form id="checkout-form" class="space-y-4">
+        @endif
+
+        @if(session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Order Summary -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+                
+                <div class="space-y-4">
+                    @foreach($cartItems as $item)
+                        <div class="flex items-center space-x-4 py-3 border-b border-gray-200">
+                            <div class="flex-shrink-0 h-12 w-12">
+                                @if($item->product->image_url)
+                                    <img class="h-12 w-12 rounded-md object-cover" 
+                                         src="{{ $item->product->image_url }}" 
+                                         alt="{{ $item->product->name }}">
+                                @else
+                                    <div class="h-12 w-12 rounded-md bg-gray-300 flex items-center justify-center">
+                                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm font-medium text-gray-900">{{ $item->product->name }}</h3>
+                                @if($item->product_options && count($item->product_options) > 0)
+                                    <p class="text-sm text-gray-500">
+                                        @foreach($item->product_options as $key => $value)
+                                            {{ ucfirst($key) }}: {{ $value }}{{ !$loop->last ? ', ' : '' }}
+                                        @endforeach
+                                    </p>
+                                @endif
+                                <p class="text-sm text-gray-500">Qty: {{ $item->quantity }}</p>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900">
+                                LKR {{ number_format($item->subtotal, 2) }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <div class="flex justify-between items-center text-lg font-semibold text-gray-900">
+                        <span>Total:</span>
+                        <span>LKR {{ number_format($cartTotal, 2) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Shipping Information</h2>
+                
+                <form id="checkout-form" method="POST" action="{{ route('cart.process-checkout') }}">
                     @csrf
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input type="text" id="name" name="name" value="{{ auth()->user()->name ?? '' }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">
-                    </div>
                     
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" id="email" name="email" value="{{ auth()->user()->email ?? '' }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">
-                    </div>
-                    
-                    <div>
-                        <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-                        <input type="text" id="address" name="address" value="{{ auth()->user()->address ?? '' }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">
-                    </div>
-                    
-                    <div>
-                        <label for="city" class="block text-sm font-medium text-gray-700">City</label>
-                        <input type="text" id="city" name="city" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">
-                    </div>
-                    
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
-                        <input type="tel" id="phone" name="phone" value="{{ auth()->user()->phone ?? '' }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Payment Method</label>
-                        <div class="mt-2">
-                            <label class="inline-flex items-center">
-                                <input type="radio" class="form-radio" name="paymentMethod" value="cashOnDelivery" checked>
-                                <span class="ml-2">Cash on Delivery</span>
-                            </label>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="full_name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" 
+                                   id="full_name" 
+                                   name="full_name" 
+                                   value="{{ Auth::user()->name ?? old('full_name') }}" 
+                                   required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                            @error('full_name')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ Auth::user()->email ?? old('email') }}" 
+                                   required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                            @error('email')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="shipping_address" class="block text-sm font-medium text-gray-700">Shipping Address</label>
+                            <textarea id="shipping_address" 
+                                      name="shipping_address" 
+                                      rows="3" 
+                                      required 
+                                      placeholder="Enter your complete shipping address"
+                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">{{ Auth::user()->address ?? old('shipping_address') }}</textarea>
+                            @error('shipping_address')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                            <input type="text" 
+                                   id="city" 
+                                   name="city" 
+                                   value="{{ old('city') }}" 
+                                   required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                            @error('city')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                            <input type="tel" 
+                                   id="phone" 
+                                   name="phone" 
+                                   value="{{ Auth::user()->phone ?? old('phone') }}" 
+                                   required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                            @error('phone')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="cod" 
+                                           name="payment_method" 
+                                           type="radio" 
+                                           value="cod" 
+                                           checked 
+                                           class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
+                                    <label for="cod" class="ml-3 block text-sm font-medium text-gray-700">
+                                        Cash on Delivery
+                                    </label>
+                                </div>
+                            </div>
+                            @error('payment_method')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
-                    
-                    <button type="submit" class="w-full bg-blue-500 text-white py-3 px-6 rounded-md hover:bg-opacity-90 transition duration-300">Place Order</button>
+
+                    <div class="mt-8 flex justify-between">
+                        <a href="{{ route('cart.index') }}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            ← Back to Cart
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            Place Order
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
-    </main>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("Checkout page loaded");
-            loadCheckout();
-            
-            // Handle form submission
-            document.getElementById('checkout-form').addEventListener('submit', handleCheckout);
-        });
-        
-        function loadCheckout() {
-            const checkoutItems = document.getElementById('checkout-items');
-            const checkoutTotal = document.getElementById('checkout-total');
-            const cartItems = JSON.parse(localStorage.getItem('userCart')) || [];
-            
-            console.log("Loading checkout with items:", cartItems);
-            
-            // Redirect to cart if no items
-            if (cartItems.length === 0) {
-                console.log("No items in cart, redirecting to cart page");
-                window.location.href = '{{ route('cart.index') }}';
-                return;
-            }
-            
-            let checkoutHTML = '';
-            let totalPrice = 0;
-            
-            cartItems.forEach((item) => {
-                const itemTotal = parseFloat(item.price) * item.quantity;
-                totalPrice += itemTotal;
-                
-                checkoutHTML += `
-                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-200">
-                        <div class="flex items-center">
-                            <img src="${item.imageUrl || '/placeholder.svg'}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md mr-3">
-                            <div>
-                                <p class="font-medium">${item.name}</p>
-                                <p class="text-sm text-gray-500">Qty: ${item.quantity}</p>
-                            </div>
-                        </div>
-                        <span>LKR ${itemTotal.toFixed(2)}</span>
-                    </div>
-                `;
-            });
-            
-            checkoutItems.innerHTML = checkoutHTML;
-            checkoutTotal.innerHTML = `Total: <span class="text-primary">LKR ${totalPrice.toFixed(2)}</span>`;
-        }
-        
-        async function handleCheckout(event) {
-            event.preventDefault();
-            console.log("Checkout form submitted");
-            
-            try {
-                const formData = new FormData(event.target);
-                const cartItems = JSON.parse(localStorage.getItem('userCart')) || [];
-                
-                if (cartItems.length === 0) {
-                    showNotification('Your cart is empty', 'error');
-                    return;
-                }
-                
-                const payload = {
-                    shipping_address: `${formData.get('address')}, ${formData.get('city')}`,
-                    items: cartItems.map((item) => ({
-                        product_id: item.id,
-                        quantity: item.quantity
-                    }))
-                };
-                
-                console.log("Sending order payload:", payload);
-                
-                // Get CSRF token
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
-                showNotification('Processing your order...', 'success');
-                
-                const response = await fetch('/api/orders', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                console.log("Order response status:", response.status);
-                
-                const responseData = await response.json();
-                console.log("Order response data:", responseData);
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        showNotification('Please login to place an order', 'error');
-                        setTimeout(() => {
-                            window.location.href = '{{ route('login') }}';
-                        }, 2000);
-                        return;
-                    }
-                    throw new Error(responseData.error || 'Order creation failed');
-                }
-                
-                // If we get here, the order was successfully placed
-                // Clear cart and redirect to orders page
-                localStorage.removeItem('userCart');
-                showNotification('Order placed successfully!', 'success');
-                
-                setTimeout(() => {
-                    window.location.href = '{{ route('home') }}';
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Checkout error:', error);
-                showNotification(error.message || 'An error occurred while placing the order', 'error');
-            }
-        }
-        
-        function showNotification(message, type = 'success') {
-            console.log("Notification:", message, type);
-            
-            const notification = document.createElement("div");
-            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-md z-50 ${
-                type === "success" ? "bg-green-500" : "bg-red-500"
-            } text-white`;
-            notification.textContent = message;
-
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.classList.add(
-                    "opacity-0",
-                    "transition-opacity",
-                    "duration-500"
-                );
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
-    </script>
-</x-app-layout>
-
+    </div>
+</div>
+@endsection

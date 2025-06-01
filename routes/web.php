@@ -1,4 +1,5 @@
 <?php
+// routes/web.php
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
@@ -8,18 +9,14 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubscriptionController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
+// Health check route
 Route::get('/health-check', function () {
     try {
         $checks = [
-            'laravel' => 'OK',
+            'status' => 'OK',
             'timestamp' => now()->toISOString(),
             'app_env' => config('app.env', 'unknown'),
             'app_debug' => config('app.debug', false) ? 'true' : 'false',
@@ -52,7 +49,7 @@ Route::get('/health-check', function () {
     }
 });
 
-// ONly for debugging
+// Only for debugging
 Route::get('/debug-env', function () {
     if (config('app.env') !== 'production') {
         return response()->json([
@@ -78,15 +75,12 @@ Route::get('/debug-config', function () {
     ]);
 });
 
-Route::get('/debug-simple', function () {
-    return 'Simple debug route working';
-});
-
 // Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
-Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
-Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit');
+Route::get('/contact', function () {
+    return view('contact');
+})->name('contact');
 
 // Product routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -95,11 +89,10 @@ Route::get('/categories/{category}', [ProductController::class, 'byCategory'])->
 
 // Cart routes
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::get('/cart/data', [CartController::class, 'getCartData'])->name('cart.data');
 Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update/{item}', [CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/remove/{item}', [CartController::class, 'remove'])->name('cart.remove');
-Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.process-checkout');
+Route::put('/cart/update/{item}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{item}', [CartController::class, 'remove'])->name('cart.remove');
 
 // Subscription routes
 Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscriptions.index');
@@ -118,6 +111,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Cart checkout routes (require authentication)
+    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.process-checkout');
     
     // Order routes
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -143,6 +140,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth:admin'])->group(function () {
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+
+        Route::get('/contacts', function () {
+            return view('admin.contacts.index');
+        })->name('contacts.index');
         
         // Admin product management (with MongoDB analytics)
         Route::get('/products', [ProductController::class, 'adminIndex'])->name('products.index');
@@ -163,6 +164,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Order management (with MongoDB analytics)
         Route::get('/orders', [OrderController::class, 'adminIndex'])->name('orders.index');
+        Route::get('/orders/{id}', [OrderController::class, 'adminShow'])->name('orders.show');
         Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
         
         // Subscription management

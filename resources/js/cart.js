@@ -8,12 +8,21 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", function (e) {
             e.preventDefault();
             const productId = this.getAttribute("data-product-id");
-            const quantity =
-                document.querySelector(
-                    `input[name="quantity"][data-product-id="${productId}"]`
-                )?.value || 1;
+            const quantityInput = document.querySelector(
+                `input[name="quantity"][data-product-id="${productId}"]`
+            );
+            const quantity = quantityInput ? quantityInput.value : 1;
 
-            addToCart(productId, quantity);
+            // Collect any variant options
+            const options = {};
+            const variantSelects = document.querySelectorAll(".variant-select");
+            variantSelects.forEach((select) => {
+                if (select.value) {
+                    options[select.name] = select.value;
+                }
+            });
+
+            addToCart(productId, quantity, options);
         });
     });
 
@@ -38,226 +47,273 @@ document.addEventListener("DOMContentLoaded", () => {
             removeCartItem(itemId);
         });
     });
+
+    // Quantity increment/decrement buttons
+    const incrementButtons = document.querySelectorAll(".quantity-increment");
+    const decrementButtons = document.querySelectorAll(".quantity-decrement");
+
+    incrementButtons.forEach((button) => {
+        button.addEventListener("click", function (e) {
+            e.preventDefault();
+            const input = this.parentElement.querySelector(
+                'input[type="number"]'
+            );
+            const max = parseInt(input.getAttribute("max")) || 999;
+            const current = parseInt(input.value) || 0;
+            if (current < max) {
+                input.value = current + 1;
+                input.dispatchEvent(new Event("change"));
+            }
+        });
+    });
+
+    decrementButtons.forEach((button) => {
+        button.addEventListener("click", function (e) {
+            e.preventDefault();
+            const input = this.parentElement.querySelector(
+                'input[type="number"]'
+            );
+            const min = parseInt(input.getAttribute("min")) || 1;
+            const current = parseInt(input.value) || 0;
+            if (current > min) {
+                input.value = current - 1;
+                input.dispatchEvent(new Event("change"));
+            }
+        });
+    });
 });
 
-// Add product to cart
-function addToCart(productId, quantity) {
-    // First, try to use localStorage for client-side cart
-    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
+// Add product to cart via server-side
+function addToCart(productId, quantity, options = {}) {
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content");
 
-    // Find product details from the page or fetch from API
-    let productName, productPrice, productImage;
-
-    // If we're on the product page, get details from the page
-    if (document.querySelector("h1")) {
-        productName = document.querySelector("h1").textContent.trim();
-        productPrice =
-            document
-                .querySelector(".text-primary.font-bold")
-                ?.textContent.trim()
-                .replace("LKR ", "")
-                .replace(",", "") || "0";
-        productImage =
-            document.getElementById("main-image")?.getAttribute("src") || "";
-        const productDescription =
-            document.querySelector(".text-gray-600")?.textContent.trim() || "";
-
-        // Create product object
-        const product = {
-            id: productId,
-            name: productName,
-            price: Number.parseFloat(productPrice),
-            imageUrl: productImage,
-            description: productDescription,
-            quantity: Number.parseInt(quantity),
-        };
-
-        // Check if product already exists in cart
-        const existingProductIndex = cart.findIndex(
-            (item) => item.id === productId
+    if (!csrfToken) {
+        showNotification(
+            "Security token not found. Please refresh the page.",
+            "error"
         );
-
-        if (existingProductIndex !== -1) {
-            // Update quantity if product already exists
-            cart[existingProductIndex].quantity += Number.parseInt(quantity);
-        } else {
-            // Add new product to cart
-            cart.push(product);
-        }
-
-        // Save updated cart to localStorage
-        localStorage.setItem("userCart", JSON.stringify(cart));
-
-        // Update cart count
-        updateCartCount();
-
-        // Show notification
-        showNotification("Product added to cart!", "success");
-    } else {
-        // If not on product page, fetch product details from server
-        fetch(`/api/products/${productId}`, {
-            headers: {
-                "Content-Type": "application/json",
-                "X-Requested-With": "XMLHttpRequest",
-            },
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success) {
-                    const product = {
-                        id: productId,
-                        name: data.data.name,
-                        price: Number.parseFloat(data.data.price),
-                        imageUrl: data.data.image_url || "/placeholder.svg",
-                        description: data.data.description,
-                        quantity: Number.parseInt(quantity),
-                    };
-
-                    // Check if product already exists in cart
-                    const existingProductIndex = cart.findIndex(
-                        (item) => item.id === productId
-                    );
-
-                    if (existingProductIndex !== -1) {
-                        // Update quantity if product already exists
-                        cart[existingProductIndex].quantity +=
-                            Number.parseInt(quantity);
-                    } else {
-                        // Add new product to cart
-                        cart.push(product);
-                    }
-
-                    // Save updated cart to localStorage
-                    localStorage.setItem("userCart", JSON.stringify(cart));
-
-                    // Update cart count
-                    updateCartCount();
-
-                    // Show notification
-                    showNotification("Product added to cart!", "success");
-                } else {
-                    showNotification(
-                        data.message || "Failed to add product to cart.",
-                        "error"
-                    );
-                }
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-                showNotification(
-                    "An error occurred. Please try again.",
-                    "error"
-                );
-            });
-    }
-}
-
-// Update cart item quantity
-function updateCartItem(itemId, quantity) {
-    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
-
-    // Find the item in the cart
-    const itemIndex = cart.findIndex((item) => item.id === itemId);
-
-    if (itemIndex === -1) {
-        showNotification("Item not found in cart.", "error");
         return;
     }
 
-    // Update quantity
-    cart[itemIndex].quantity = Number.parseInt(quantity);
-
-    // Remove item if quantity is 0 or less
-    if (cart[itemIndex].quantity <= 0) {
-        return removeCartItem(itemId);
+    // Disable the button to prevent double-clicks
+    const button = document.querySelector(`[data-product-id="${productId}"]`);
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Adding...";
     }
 
-    // Save updated cart
-    localStorage.setItem("userCart", JSON.stringify(cart));
-
-    // Update UI
-    if (document.getElementById(`item-subtotal-${itemId}`)) {
-        const subtotal = cart[itemIndex].price * cart[itemIndex].quantity;
-        document.getElementById(
-            `item-subtotal-${itemId}`
-        ).textContent = `LKR ${subtotal.toFixed(2)}`;
-
-        // Update total
-        const total = cart.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-        document.getElementById(
-            "cart-total"
-        ).textContent = `LKR ${total.toFixed(2)}`;
-    }
-
-    // Update cart count
-    updateCartCount();
-
-    showNotification("Cart updated!", "success");
-}
-
-// Remove item from cart
-function removeCartItem(itemId) {
-    let cart = JSON.parse(localStorage.getItem("userCart")) || [];
-
-    // Filter out the item
-    cart = cart.filter((item) => item.id !== itemId);
-
-    // Save updated cart
-    localStorage.setItem("userCart", JSON.stringify(cart));
-
-    // Update UI
-    if (document.getElementById(`cart-item-${itemId}`)) {
-        document.getElementById(`cart-item-${itemId}`).remove();
-
-        // Update total
-        const total = cart.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-        if (document.getElementById("cart-total")) {
-            document.getElementById(
-                "cart-total"
-            ).textContent = `LKR ${total.toFixed(2)}`;
-        }
-
-        // Show empty cart message if cart is empty
-        if (
-            cart.length === 0 &&
-            document.getElementById("cart-table") &&
-            document.getElementById("empty-cart")
-        ) {
-            document.getElementById("cart-table").classList.add("hidden");
-            document.getElementById("empty-cart").classList.remove("hidden");
-
-            if (document.getElementById("checkout-button")) {
-                document
-                    .getElementById("checkout-button")
-                    .classList.add("hidden");
+    fetch(`/cart/add/${productId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            quantity: parseInt(quantity),
+            options: options,
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                updateCartCount();
+                showNotification("Product added to cart!", "success");
+            } else {
+                showNotification(
+                    data.message || "Failed to add product to cart.",
+                    "error"
+                );
             }
-        }
-    }
-
-    // Update cart count
-    updateCartCount();
-
-    showNotification("Item removed from cart!", "success");
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showNotification("An error occurred. Please try again.", "error");
+        })
+        .finally(() => {
+            // Re-enable the button
+            if (button) {
+                button.disabled = false;
+                button.textContent = "Add to Cart";
+            }
+        });
 }
 
-// Update cart count in header
-function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+// Update cart item quantity via server-side
+function updateCartItem(itemId, quantity) {
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content");
 
-    // Update all cart count elements
+    if (!csrfToken) {
+        showNotification(
+            "Security token not found. Please refresh the page.",
+            "error"
+        );
+        return;
+    }
+
+    fetch(`/cart/update/${itemId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            quantity: parseInt(quantity),
+            _method: "PUT",
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Update UI elements
+                if (document.getElementById(`item-subtotal-${itemId}`)) {
+                    document.getElementById(
+                        `item-subtotal-${itemId}`
+                    ).textContent = `LKR ${
+                        data.item_subtotal
+                            ? data.item_subtotal.toFixed(2)
+                            : "0.00"
+                    }`;
+                }
+
+                if (document.getElementById("cart-total")) {
+                    document.getElementById("cart-total").textContent = `LKR ${
+                        data.cart_total ? data.cart_total.toFixed(2) : "0.00"
+                    }`;
+                }
+
+                updateCartCount();
+                showNotification("Cart updated!", "success");
+            } else {
+                showNotification(
+                    data.message || "Failed to update cart.",
+                    "error"
+                );
+                // Revert the input value if update failed
+                location.reload();
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showNotification("An error occurred. Please try again.", "error");
+            location.reload();
+        });
+}
+
+// Remove item from cart via server-side
+function removeCartItem(itemId) {
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content");
+
+    if (!csrfToken) {
+        showNotification(
+            "Security token not found. Please refresh the page.",
+            "error"
+        );
+        return;
+    }
+
+    if (!confirm("Are you sure you want to remove this item from cart?")) {
+        return;
+    }
+
+    fetch(`/cart/remove/${itemId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            _method: "DELETE",
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Remove the item row from UI
+                const itemRow = document.getElementById(`cart-item-${itemId}`);
+                if (itemRow) {
+                    itemRow.remove();
+                }
+
+                // Update total
+                if (document.getElementById("cart-total")) {
+                    document.getElementById("cart-total").textContent = `LKR ${
+                        data.cart_total ? data.cart_total.toFixed(2) : "0.00"
+                    }`;
+                }
+
+                // Check if cart is empty
+                const remainingItems =
+                    document.querySelectorAll('[id^="cart-item-"]');
+                if (remainingItems.length === 0) {
+                    location.reload(); // Reload to show empty cart message
+                }
+
+                updateCartCount();
+                showNotification("Item removed from cart!", "success");
+            } else {
+                showNotification(
+                    data.message || "Failed to remove item.",
+                    "error"
+                );
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showNotification("An error occurred. Please try again.", "error");
+        });
+}
+
+// Update cart count in header via server-side
+function updateCartCount() {
+    fetch("/cart/data", {
+        method: "GET",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+        },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Update all cart count elements
+                document.querySelectorAll(".cart-count").forEach((element) => {
+                    element.textContent = data.data.count || 0;
+                });
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching cart data:", error);
+            // Fallback to localStorage for compatibility
+            updateCartCountFromLocalStorage();
+        });
+}
+
+// Fallback function for cart count (maintains backward compatibility)
+function updateCartCountFromLocalStorage() {
+    const cart = JSON.parse(localStorage.getItem("userCart")) || [];
+    const totalItems = cart.reduce(
+        (total, item) => total + (item.quantity || 0),
+        0
+    );
+
     document.querySelectorAll(".cart-count").forEach((element) => {
         element.textContent = totalItems;
     });
 }
 
-// Show notification
+// Show notification function (unchanged)
 function showNotification(message, type = "success") {
     const notification = document.createElement("div");
     notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-md z-50 ${
@@ -278,3 +334,66 @@ function showNotification(message, type = "success") {
         }, 500);
     }, 3000);
 }
+
+// Checkout handling
+document.addEventListener("DOMContentLoaded", function () {
+    const checkoutForm = document.getElementById("checkout-form");
+    if (checkoutForm) {
+        checkoutForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content");
+
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = "Processing...";
+            }
+
+            fetch("/cart/checkout", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest",
+                    Accept: "application/json",
+                },
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        showNotification(
+                            "Order placed successfully!",
+                            "success"
+                        );
+                        if (data.redirect_url) {
+                            setTimeout(() => {
+                                window.location.href = data.redirect_url;
+                            }, 1000);
+                        }
+                    } else {
+                        showNotification(
+                            data.message || "Failed to place order.",
+                            "error"
+                        );
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    showNotification(
+                        "An error occurred. Please try again.",
+                        "error"
+                    );
+                })
+                .finally(() => {
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = "Place Order";
+                    }
+                });
+        });
+    }
+});

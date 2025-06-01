@@ -2,195 +2,243 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use App\Models\ProductAnalytics;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Services\CartService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
-    /**
-     * Display the cart page.
-     */
-    public function index(Request $request)
+    protected $cartService;
+
+    public function __construct(CartService $cartService)
     {
-        if ($request->ajax()) {
-            // For AJAX requests, return cart count
-            $cart = Session::get('cart', []);
-            $count = array_sum(array_column($cart, 'quantity'));
-            
-            return response()->json([
-                'count' => $count,
-                'cart' => $cart
-            ]);
-        }
-        
-        return view('cart.index');
+        $this->cartService = $cartService;
     }
 
-    /**
-     * Add a product to the cart.
-     */
+    public function index()
+    {
+        $cartItems = $this->cartService->getCartItems();
+        $cartTotal = $this->cartService->getCartTotal();
+        $cartCount = $this->cartService->getCartCount();
+
+        return view('cart.index', compact('cartItems', 'cartTotal', 'cartCount'));
+    }
+
     public function add(Request $request, $productId)
     {
-        $product = Product::findOrFail($productId);
-        $quantity = $request->input('quantity', 1);
-        
-        if ($product->stock_quantity < $quantity) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Not enough stock available.'
-            ], 400);
-        }
-        
-        $cart = Session::get('cart', []);
-        
-        // Check if product already exists in cart
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity'] += $quantity;
-        } else {
-            $cart[$productId] = [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'quantity' => $quantity,
-                'image_url' => $product->image_url
-            ];
-        }
-        
-        Session::put('cart', $cart);
-
-        // Log cart addition to MongoDB analytics
         try {
-            ProductAnalytics::logCartAdd($productId, Auth::id(), $quantity);
-        } catch (\Exception $e) {
-            // Silent fail for analytics
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Product added to cart!',
-            'count' => array_sum(array_column($cart, 'quantity'))
-        ]);
-    }
+            $request->validate([
+                'quantity' => 'required|integer|min:1',
+                'options' => 'array'
+            ]);
 
-    /**
-     * Update cart item quantity.
-     */
-    public function update(Request $request, $itemId)
-    {
-        $quantity = $request->input('quantity');
-        
-        if ($quantity <= 0) {
-            return $this->remove($request, $itemId);
-        }
-        
-        $cart = Session::get('cart', []);
-        
-        if (!isset($cart[$itemId])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Item not found in cart.'
-            ], 404);
-        }
-        
-        // Check product stock
-        $product = Product::find($itemId);
-        if ($product && $product->stock_quantity < $quantity) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Not enough stock available.'
-            ], 400);
-        }
-        
-        $oldQuantity = $cart[$itemId]['quantity'];
-        $cart[$itemId]['quantity'] = $quantity;
-        Session::put('cart', $cart);
+            $cartItem = $this->cartService->addToCart(
+                $productId,
+                $request->quantity,
+                $request->options ?? []
+            );
 
-        // Log quantity change to MongoDB analytics if increased
-        if ($quantity > $oldQuantity) {
-            try {
-                ProductAnalytics::logCartAdd($itemId, Auth::id(), $quantity - $oldQuantity);
-            } catch (\Exception $e) {
-                // Silent fail for analytics
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product added to cart',
+                    'cart_count' => $this->cartService->getCartCount(),
+                    'cart_total' => $this->cartService->getCartTotal()
+                ]);
             }
+
+            return redirect()->back()->with('success', 'Product added to cart!');
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
         }
-        
-        // Calculate subtotal and total
-        $subtotal = $cart[$itemId]['price'] * $quantity;
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Cart updated!',
-            'subtotal' => number_format($subtotal, 2),
-            'total' => number_format($total, 2),
-            'count' => array_sum(array_column($cart, 'quantity'))
-        ]);
     }
 
-    /**
-     * Remove item from cart.
-     */
-    public function remove(Request $request, $itemId)
+    public function update(Request $request, $cartItemId)
     {
-        $cart = Session::get('cart', []);
-        
-        if (!isset($cart[$itemId])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Item not found in cart.'
-            ], 404);
+        try {
+            $request->validate([
+                'quantity' => 'required|integer|min:0'
+            ]);
+
+            $cartItem = $this->cartService->updateCartItem($cartItemId, $request->quantity);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cart updated',
+                    'cart_count' => $this->cartService->getCartCount(),
+                    'cart_total' => $this->cartService->getCartTotal(),
+                    'item_subtotal' => $cartItem->subtotal
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Cart updated!');
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
         }
-        
-        unset($cart[$itemId]);
-        Session::put('cart', $cart);
-        
-        // Calculate total
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Item removed from cart!',
-            'total' => number_format($total, 2),
-            'count' => array_sum(array_column($cart, 'quantity'))
-        ]);
     }
 
-    /**
-     * Display the checkout page.
-     */
+    public function remove(Request $request, $cartItemId)
+    {
+        try {
+            $this->cartService->removeFromCart($cartItemId);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Item removed from cart',
+                    'cart_count' => $this->cartService->getCartCount(),
+                    'cart_total' => $this->cartService->getCartTotal()
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Item removed from cart!');
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
     public function checkout()
     {
-        // Don't redirect if using localStorage cart
-        // Just render the checkout view
-        return view('cart.checkout');
+        $cartItems = $this->cartService->getCartItems();
+        
+        if ($cartItems->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Your cart is empty!');
+        }
+
+        $cartTotal = $this->cartService->getCartTotal();
+
+        return view('cart.checkout', compact('cartItems', 'cartTotal'));
     }
 
-    /**
-     * Process the checkout and create an order.
-     */
     public function processCheckout(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'address' => 'required|string',
-            'city' => 'required|string',
-            'phone' => 'required|string',
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Please login to place an order.');
+        }
+
+        $request->validate([
+            'shipping_address' => 'required|string|max:500',
+            'payment_method' => 'required|string'
         ]);
 
-        // The actual order processing is handled by JavaScript
-        // which calls the OrderController's store method via API
-        
-        return redirect()->route('orders.index')
-            ->with('success', 'Order placed successfully!');
+        try {
+            DB::beginTransaction();
+
+            $cartItems = $this->cartService->getCartItems();
+            
+            if ($cartItems->isEmpty()) {
+                throw new \Exception('Your cart is empty!');
+            }
+
+            // Check stock availability
+            foreach ($cartItems as $cartItem) {
+                if ($cartItem->product->stock_quantity < $cartItem->quantity) {
+                    throw new \Exception("Not enough stock for {$cartItem->product->name}");
+                }
+            }
+
+            // Create order
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'total_amount' => $this->cartService->getCartTotal(),
+                'status' => 'pending',
+                'shipping_address' => $request->shipping_address
+            ]);
+
+            // Create order items and update stock
+            foreach ($cartItems as $cartItem) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $cartItem->product_id,
+                    'quantity' => $cartItem->quantity,
+                    'price_at_time' => $cartItem->product->price
+                ]);
+
+                // Update product stock
+                $cartItem->product->decrement('stock_quantity', $cartItem->quantity);
+            }
+
+            // Clear cart
+            $this->cartService->clearCart();
+
+            DB::commit();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Order placed successfully!',
+                    'order_id' => $order->id,
+                    'redirect_url' => route('orders.show', $order->id)
+                ]);
+            }
+
+            return redirect()->route('orders.show', $order->id)->with('success', 'Order placed successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    // API method for getting cart data
+    public function getCartData(Request $request)
+    {
+        $cartItems = $this->cartService->getCartItems();
+        $cartTotal = $this->cartService->getCartTotal();
+        $cartCount = $this->cartService->getCartCount();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'items' => $cartItems->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name,
+                        'product_image' => $item->product->image_url,
+                        'product_price' => $item->product->price,
+                        'quantity' => $item->quantity,
+                        'subtotal' => $item->subtotal,
+                        'options' => $item->product_options
+                    ];
+                }),
+                'total' => $cartTotal,
+                'count' => $cartCount
+            ]
+        ]);
     }
 }

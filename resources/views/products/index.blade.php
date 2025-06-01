@@ -62,7 +62,7 @@
                         <div class="mb-4 md:mb-0">
                             <span class="text-gray-600">{{ $products->total() }} products found</span>
                         </div>
-                        <div class="flex space-x-4">
+                        {{-- <div class="flex space-x-4">
                             <div>
                                 <label for="sort" class="text-sm font-medium text-gray-700 mr-2">Sort by:</label>
                                 <select id="sort" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
@@ -80,7 +80,7 @@
                                     <option value="48" {{ request('limit') == 48 ? 'selected' : '' }}>48</option>
                                 </select>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
                 
