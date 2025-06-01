@@ -41,6 +41,7 @@
                     @yield('content')
                 @endif
             </main>
+            @include('layouts.footer')
         </div>
 
         @stack('modals')

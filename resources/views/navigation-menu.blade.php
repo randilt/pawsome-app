@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('home') }}">
-                        <x-application-mark class="block h-9 w-auto" />
+                        {{-- <x-application-mark class="block h-9 w-auto" /> --}}
                         Pawsome
                     </a>
                 </div>
@@ -18,6 +18,9 @@
                     </x-nav-link>
                     <x-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.*')">
                         {{ __('Products') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('contact') }}" :active="request()->routeIs('contact')">
+                        {{ __('Contact') }}
                     </x-nav-link>
                     @if(Auth::check())
                         <x-nav-link href="{{ route('orders.index') }}" :active="request()->routeIs('orders.*')">

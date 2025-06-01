@@ -10,8 +10,6 @@
                 <ul class="space-y-2">
                     <li><a href="{{ route('home') }}" class="text-gray-300 hover:text-white">Home</a></li>
                     <li><a href="{{ route('products.index') }}" class="text-gray-300 hover:text-white">Products</a></li>
-                    <li><a href="{{ route('subscriptions.index') }}" class="text-gray-300 hover:text-white">Subscription</a></li>
-                    <li><a href="{{ route('about') }}" class="text-gray-300 hover:text-white">About Us</a></li>
                     <li><a href="{{ route('contact') }}" class="text-gray-300 hover:text-white">Contact</a></li>
                 </ul>
             </div>
