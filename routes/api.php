@@ -19,6 +19,10 @@ Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login'])
 // Product routes
 Route::get('/products', [App\Http\Controllers\Api\ProductController::class, 'index']);
 Route::get('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'show']);
+
+// Review routes
+Route::get('/products/{productId}/reviews', [App\Http\Controllers\Api\ProductController::class, 'getProductReviews']);
+Route::get('/products/{productId}/review-stats', [App\Http\Controllers\Api\ProductController::class, 'getReviewStats']);
     
 // Order routes that need authentication
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -40,4 +44,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/orders', [App\Http\Controllers\Api\OrderController::class, 'index']);
     Route::post('/orders', [App\Http\Controllers\Api\OrderController::class, 'store']);
     Route::get('/orders/{id}', [App\Http\Controllers\Api\OrderController::class, 'show']);
+
+    // Review submission
+    Route::post('/products/{productId}/reviews', [App\Http\Controllers\Api\ProductController::class, 'submitReview']);
 });
